@@ -1,0 +1,27 @@
+-- 1. 스키마(데이터베이스) 생성 (이미 있다면 생략 가능)
+CREATE DATABASE dictionary CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- 2. 해당 스키마 사용
+USE dictionary;
+
+-- 3. 테이블 생성
+CREATE TABLE JAPANESE_WORD (
+    word_id INT AUTO_INCREMENT PRIMARY KEY,  -- 관리용 고유 번호 (자동 증가)
+    word    VARCHAR(50) NOT NULL,            -- 한자 (필수)
+    umdoc   VARCHAR(100),                    -- 음독 (없는 경우도 있어 NULL 허용)
+    hundoc  VARCHAR(100),                    -- 훈독 (없는 경우도 있어 NULL 허용)
+    korean  VARCHAR(200) NOT NULL,           -- 뜻 (필수)
+    jlpt    VARCHAR(10) DEFAULT 'N5'         -- 급수 (예: N1, N2... 기본값 N5)
+);
+
+CREATE TABLE jquiz (
+    quiz_id INT AUTO_INCREMENT PRIMARY KEY,   -- 퀴즈 고유 번호
+    word VARCHAR(50) NOT NULL,                -- 문제 (예: 한자)
+    jlpt VARCHAR(10) DEFAULT 'N5',            -- 급수
+    selection1 VARCHAR(100) NOT NULL,         -- 보기 1
+    selection2 VARCHAR(100) NOT NULL,         -- 보기 2
+    selection3 VARCHAR(100) NOT NULL,         -- 보기 3
+    selection4 VARCHAR(100) NOT NULL,         -- 보기 4
+    answer INT NOT NULL                       -- 정답 번호 (1~4)
+);
+
