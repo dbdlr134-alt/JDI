@@ -25,9 +25,11 @@ CREATE TABLE jquiz (
 );
 
 CREATE TABLE jdi_login (
-    jdi_user   VARCHAR(50) PRIMARY KEY,     -- 아이디 (중복 불가)
-    jdi_pass   VARCHAR(100) NOT NULL,       -- 비밀번호 (암호화 고려 100자)
-    jdi_name   VARCHAR(50) NOT NULL,        -- 이름
-    jdi_email  VARCHAR(100),                -- 이메일
-    jdi_phone  VARCHAR(20) NOT NULL         -- 전화번호
+    jdi_user    VARCHAR(50) PRIMARY KEY,         -- 아이디
+    jdi_pass    VARCHAR(100) NOT NULL,           -- 비밀번호 (암호화 저장)
+    jdi_name    VARCHAR(50) NOT NULL,            -- 이름
+    jdi_email   VARCHAR(100),                    -- 이메일
+    jdi_phone   VARCHAR(20),                     -- 전화번호
+    jdi_profile VARCHAR(50) DEFAULT 'profile1.png', -- 프로필 사진 (기본값 설정)
+    jdi_role    VARCHAR(10) DEFAULT 'USER'       -- 등급 (USER:일반, ADMIN:관리자)
 );
