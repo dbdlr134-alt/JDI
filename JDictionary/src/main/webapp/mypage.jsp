@@ -55,7 +55,10 @@
 
     <div class="mypage-container">
         <div class="profile-card">
-            <div class="profile-img">User</div>
+            <div class="profile-img">
+    <img src="images/<%= myUser.getJdi_profile() %>" 
+         style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+	</div>
             <h2><%= myUser.getJdi_name() %></h2>
             <p style="color:#888; margin-bottom:20px;"><%= myUser.getJdi_email() %></p>
             

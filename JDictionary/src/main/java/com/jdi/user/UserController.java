@@ -27,6 +27,7 @@ public class UserController extends HttpServlet {
 		
 		UserDAO dao = new UserDAO();
 		
+		
 		switch(command) {
 		
 			// [1] 문자 발송 요청 (이제 아주 간단해졌습니다!)
@@ -83,13 +84,22 @@ public class UserController extends HttpServlet {
 				String loginPw = request.getParameter("pw");
 				
 				UserDTO user = dao.loginCheck(loginId, loginPw);
-				
-				if(user != null) {
-					request.getSession().setAttribute("sessionUser", user);
-					response.sendRedirect("index.jsp");
-				} else {
-					response.sendRedirect("login.jsp?error=1");
-				}
+			    
+			    if(user != null) {
+			        request.getSession().setAttribute("sessionUser", user);
+			        
+			        // ★ [핵심] 등급에 따른 이동 경로 분기
+			        if("ADMIN".equals(user.getJdi_role())) {
+			            // 관리자라면 admin 폴더의 메인으로 이동
+			            response.sendRedirect("admin/main.jsp");
+			        } else {
+			            // 일반인이라면 그냥 index.jsp로 이동
+			            response.sendRedirect("index.jsp");
+			        }
+			        
+			    } else {
+			        response.sendRedirect("login.jsp?error=1");
+			    }
 				break;
 				
 				// [5] 로그아웃 요청
@@ -118,23 +128,27 @@ public class UserController extends HttpServlet {
 
 		    // [7] 정보 통합 수정 요청
 		    case "/updateAll.do":
-		        String uName = request.getParameter("name");
+		    	String uName = request.getParameter("name");
 		        String uPhone = request.getParameter("phone");
 		        String uEmail = request.getParameter("email");
 		        String uNewPw = request.getParameter("newPw");
 		        
+		        // ★ [추가] 화면에서 선택한 이미지 파일명 받기
+		        String uProfile = request.getParameter("profile"); 
+		        
 		        UserDTO currentUser = (UserDTO)request.getSession().getAttribute("sessionUser");
 		        
-		        // DAO 실행
-		        int updateRes = dao.updateAll(currentUser.getJdi_user(), uName, uPhone, uEmail, uNewPw);
+		        // DAO 실행 (인자값에 uProfile 추가)
+		        int updateRes = dao.updateAll(currentUser.getJdi_user(), uName, uPhone, uEmail, uNewPw, uProfile);
 		        
 		        if(updateRes > 0) {
-		            // DB가 바꼈으니 세션 정보도 최신으로 갱신해줘야 함!
-		            // (단, 비밀번호는 DTO에 암호화된 걸 넣거나 비워둠)
 		            currentUser.setJdi_name(uName);
 		            currentUser.setJdi_phone(uPhone);
 		            currentUser.setJdi_email(uEmail);
-		            // 세션 다시 덮어쓰기
+		            
+		            // ★ [추가] 세션 정보에도 프로필 업데이트 (그래야 즉시 바뀜)
+		            currentUser.setJdi_profile(uProfile);
+		            
 		            request.getSession().setAttribute("sessionUser", currentUser);
 		            
 		            // 증표 삭제(재진입 방지) 후 마이페이지로

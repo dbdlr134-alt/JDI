@@ -74,6 +74,8 @@ public class UserDAO {
 	            user.setJdi_name(rs.getString("jdi_name"));
 	            user.setJdi_email(rs.getString("jdi_email"));
 	            user.setJdi_phone(rs.getString("jdi_phone"));
+	            user.setJdi_profile(rs.getString("jdi_profile"));
+	            user.setJdi_role(rs.getString("jdi_role"));
 	        }
 	    } catch (Exception e) {
 	        e.printStackTrace();
@@ -147,7 +149,7 @@ public class UserDAO {
  }
 
  // 2. 통합 정보 수정 (비밀번호 변경 포함/미포함 처리)
- public int updateAll(String id, String name, String phone, String email, String newPw) {
+ public int updateAll(String id, String name, String phone, String email, String newPw, String profile) {
      int result = 0;
      Connection conn = null;
      PreparedStatement pstmt = null;
@@ -157,25 +159,25 @@ public class UserDAO {
          conn = DBM.getConnection();
          
          if(newPw == null || newPw.equals("")) {
-             // 비밀번호 변경 안 함 (이름, 폰, 이메일만)
-             sql = "UPDATE jdi_login SET jdi_name=?, jdi_phone=?, jdi_email=? WHERE jdi_user=?";
+             // 비번 변경 X -> 프로필 컬럼(jdi_profile) 추가
+             sql = "UPDATE jdi_login SET jdi_name=?, jdi_phone=?, jdi_email=?, jdi_profile=? WHERE jdi_user=?";
              pstmt = conn.prepareStatement(sql);
              pstmt.setString(1, name);
              pstmt.setString(2, phone);
              pstmt.setString(3, email);
-             pstmt.setString(4, id);
-         } else {
-             // 비밀번호도 변경 함
-             sql = "UPDATE jdi_login SET jdi_name=?, jdi_phone=?, jdi_email=?, jdi_pass=? WHERE jdi_user=?";
-             pstmt = conn.prepareStatement(sql);
-             pstmt.setString(1, name);
-             pstmt.setString(2, phone);
-             pstmt.setString(3, email);
-             // 새 비밀번호 암호화
-             pstmt.setString(4, com.jdi.util.SHA256.encodeSha256(newPw));
+             pstmt.setString(4, profile); // ★ 추가
              pstmt.setString(5, id);
+         } else {
+             // 비번 변경 O -> 프로필 컬럼(jdi_profile) 추가
+             sql = "UPDATE jdi_login SET jdi_name=?, jdi_phone=?, jdi_email=?, jdi_pass=?, jdi_profile=? WHERE jdi_user=?";
+             pstmt = conn.prepareStatement(sql);
+             pstmt.setString(1, name);
+             pstmt.setString(2, phone);
+             pstmt.setString(3, email);
+             pstmt.setString(4, com.jdi.util.SHA256.encodeSha256(newPw));
+             pstmt.setString(5, profile); // ★ 추가
+             pstmt.setString(6, id);
          }
-         
          result = pstmt.executeUpdate();
          
      } catch (Exception e) { e.printStackTrace(); }

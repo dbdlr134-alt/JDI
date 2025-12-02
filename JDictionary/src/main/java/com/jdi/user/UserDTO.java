@@ -7,8 +7,26 @@ public class UserDTO {
     private String jdi_name;   // 이름
     private String jdi_email;  // 이메일
     private String jdi_phone;  // 전화번호
+    private String jdi_profile;
+    private String jdi_role;
 
-    // 2. 기본 생성자
+    public String getJdi_role() {
+		return jdi_role;
+	}
+
+	public void setJdi_role(String jdi_role) {
+		this.jdi_role = jdi_role;
+	}
+
+	public String getJdi_profile() {
+		return jdi_profile;
+	}
+
+	public void setJdi_profile(String jdi_profile) {
+		this.jdi_profile = jdi_profile;
+	}
+
+	// 2. 기본 생성자
     public UserDTO() {}
 
     // 3. 전체 필드 생성자
