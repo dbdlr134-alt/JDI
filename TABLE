@@ -24,3 +24,10 @@ CREATE TABLE jquiz (
     answer INT NOT NULL                       -- 정답 번호 (1~4)
 );
 
+CREATE TABLE jdi_login (
+    jdi_user   VARCHAR(50) PRIMARY KEY,     -- 아이디 (중복 불가)
+    jdi_pass   VARCHAR(100) NOT NULL,       -- 비밀번호 (암호화 고려 100자)
+    jdi_name   VARCHAR(50) NOT NULL,        -- 이름
+    jdi_email  VARCHAR(100),                -- 이메일
+    jdi_phone  VARCHAR(20) NOT NULL         -- 전화번호
+);
