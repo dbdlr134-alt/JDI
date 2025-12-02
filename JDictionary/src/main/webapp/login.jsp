@@ -37,11 +37,7 @@
 </head>
 <body>
 
-    <header class="top-header">
-        <div class="inner">
-            <div class="logo"><a href="index.jsp">My J-Dic</a></div>
-        </div>
-    </header>
+    <jsp:include page="header.jsp" />
 
     <div class="inner login-wrap">
         <div class="login-box">
@@ -62,7 +58,7 @@
             </form>
             
             <div style="margin-top: 20px; font-size: 14px; color: #888;">
-                아직 계정이 없으신가요? <a href="#" style="color:var(--main-color); font-weight:bold;">회원가입</a>
+                아직 계정이 없으신가요? <a href="join.jsp" style="color:var(--main-color); font-weight:bold;">회원가입</a>
             </div>
         </div>
     </div>

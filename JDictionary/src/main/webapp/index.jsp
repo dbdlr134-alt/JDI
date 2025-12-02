@@ -1,4 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.jdi.user.UserDTO" %>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,16 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-
-    <header class="top-header">
-        <div class="inner">
-            <div class="logo">My J-Dic</div>
-            <nav class="util-nav">
-                <a href="login.jsp" class="btn-login">로그인</a>
-                <a href="#" class="btn-menu">:::</a>
-            </nav>
-        </div>
-    </header>
+        <jsp:include page="header.jsp" />
 
     <section class="search-section">
         <div class="title-area">
