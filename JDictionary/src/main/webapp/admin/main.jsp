@@ -67,7 +67,11 @@
         <h2>관리 메뉴</h2>
         <ul style="margin-top:20px; list-style:none;">
             <li style="margin-bottom:10px;"><a href="#">👉 회원 목록 조회 및 삭제</a></li>
-            <li style="margin-bottom:10px;"><a href="#">👉 단어장 데이터 추가/수정</a></li>
+		    <li style="margin-bottom:10px;">
+		        <a href="../adminList.apply" style="font-size:18px; color:#333;">
+		            👉 <strong>단어 신청 관리</strong> (대기 목록 조회)
+		        </a>
+		    </li>
         </ul>
         
         <br>

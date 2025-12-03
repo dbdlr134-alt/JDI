@@ -1,10 +1,11 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.jdi.user.UserDTO" %>
-<%
+<%@ page import="com.jdi.user.PointDAO" %> <%
     UserDTO myUser = (UserDTO)session.getAttribute("sessionUser");
     if(myUser == null) { response.sendRedirect("login.jsp"); return; }
     
-    // [임시 데이터] 나중에 DB에서 가져온 값으로 대체하면 됩니다.
+    // ★ [핵심] DB에서 내 포인트 총합 가져오기
+    int currentPoint = PointDAO.getInstance().getTotalPoint(myUser.getJdi_user());
     int totalWords = 150; // 학습한 단어
     int wrongWords = 25;  // 틀린 단어
 %>
@@ -55,6 +56,10 @@
 
     <div class="mypage-container">
         <div class="profile-card">
+    <div class="point-badge" style="background:#fdfae5; color:#f5a623; padding:8px 15px; border-radius:20px; font-weight:bold; display:inline-flex; gap:5px; margin-top:10px;">
+        <span>💰</span> 
+        <span><%= String.format("%,d", currentPoint) %> P</span>
+    </div>
             <div class="profile-img">
     <img src="images/<%= myUser.getJdi_profile() %>" 
          style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
@@ -63,6 +68,10 @@
             <p style="color:#888; margin-bottom:20px;"><%= myUser.getJdi_email() %></p>
             
             <a href="pwd_check.jsp" class="btn-edit-go">내 정보 수정하러 가기 ></a>
+
+			<a href="request_word.jsp" class="btn-edit-go" style="background:#fff; border:1px solid var(--main-color); color:var(--main-color); margin-top:10px;">
+			    + 단어 등록 신청하기
+			</a>
         </div>
 
         <div class="chart-section">

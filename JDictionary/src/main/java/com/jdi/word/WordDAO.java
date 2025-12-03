@@ -6,34 +6,30 @@ import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpSession;
 
 import com.jdi.util.DBM;
 
-
-
-
-
 public class WordDAO {
-	Connection conn=null;
-	PreparedStatement pstmt= null;
-	ResultSet rs =null;
-	
-	// 싱글톤 생성
-	// 생성자--> 객체 생성 및 객체 생성시 초기화 시험문제에 나옴
-	private WordDAO() {}
-	
-	private static WordDAO instance = new WordDAO();//자신의 객체 생성
-	
-	public static WordDAO getInstance() {
-		return instance;
-		
-	}
-	//검색 메소드
-	// ★ 고급 검색 메소드 (정확도 우선 정렬 + 뜻 검색 포함) ★
+    
+    // 싱글톤 패턴
+    private WordDAO() {}
+    private static WordDAO instance = new WordDAO();
+    public static WordDAO getInstance() { return instance; }
+    
+    // [중요] 멤버 변수에 있던 conn, pstmt, rs는 삭제했습니다! (안전함)
+
+    // 1. 검색 메소드 (정확도 우선 정렬 + 뜻 검색 포함)
     public ArrayList<WordDTO> searchWords(String keyword) {
         ArrayList<WordDTO> list = new ArrayList<>();
+        
+        // ★ [수정] 메소드 안에서 선언 (지역 변수)
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
         String sql = "SELECT * FROM japanese_word "
                    + "WHERE word LIKE ? OR korean LIKE ? OR jlpt LIKE ? "
                    + "ORDER BY (CASE WHEN word = ? THEN 0 ELSE 1 END), LENGTH(word)";
@@ -42,23 +38,23 @@ public class WordDAO {
             conn = DBM.getConnection();
             pstmt = conn.prepareStatement(sql);
             
-            // 1. 첫 번째 ? : 단어 포함 검색 (%검색어%)
             pstmt.setString(1, "%" + keyword + "%");
-            // 2. 두 번째 ? : 뜻(한국어) 포함 검색 (%검색어%)
             pstmt.setString(2, "%" + keyword + "%");
-            // 3. 세 번째 ? : 정렬을 위한 '정확한 단어' (순수 검색어)
-            pstmt.setString(3, keyword);
-            pstmt.setString(4, keyword);
+            
+            // JLPT는 정확히 검색할 때만 나오게 하거나, 포함 검색하려면 % 추가
+            pstmt.setString(3, "%" + keyword + "%"); 
+            
+            pstmt.setString(4, keyword); // 정렬용
             
             rs = pstmt.executeQuery();
             
             while(rs.next()) {
                 WordDTO dto = new WordDTO();
                 dto.setWord_id(rs.getInt("word_id"));
-                dto.setWord(rs.getString("word"));      // 한자
-                dto.setDoc(rs.getString("doc"));        // 음독 (컬럼명 doc)
-                dto.setKorean(rs.getString("korean"));  // 뜻 (컬럼명 korean)
-                dto.setJlpt(rs.getString("jlpt"));      // 급수
+                dto.setWord(rs.getString("word"));
+                dto.setDoc(rs.getString("doc"));
+                dto.setKorean(rs.getString("korean"));
+                dto.setJlpt(rs.getString("jlpt"));
                 
                 list.add(dto);
             }
@@ -67,13 +63,16 @@ public class WordDAO {
         } finally {
             DBM.close(conn, pstmt, rs); 
         }
-        
         return list;
     }
-    //랜덤 단어 띄우는 메소드
+
+    // 2. 랜덤 단어 가져오기
     public WordDTO getRandomWord() {
-    	 WordDTO dto = null;
-        // 랜덤으로 섞어서 맨 위 1개만 가져오기
+        WordDTO dto = null;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
         String sql = "SELECT * FROM japanese_word ORDER BY RAND() LIMIT 1";
         
         try {
@@ -82,41 +81,43 @@ public class WordDAO {
             rs = pstmt.executeQuery();
             
             if(rs.next()) {
-            	dto = new WordDTO(); 
-            	dto.setWord_id(rs.getInt("word_id"));
-                dto.setWord(rs.getString("word"));      // 한자
-                dto.setDoc(rs.getString("doc"));        // 읽기
-                dto.setKorean(rs.getString("korean"));  // 뜻
-                dto.setJlpt(rs.getString("jlpt"));      // 급수
+                dto = new WordDTO(); 
+                dto.setWord_id(rs.getInt("word_id"));
+                dto.setWord(rs.getString("word"));
+                dto.setDoc(rs.getString("doc"));
+                dto.setKorean(rs.getString("korean"));
+                dto.setJlpt(rs.getString("jlpt"));
             }
         } catch(Exception e) {
             e.printStackTrace();
         } finally {
             DBM.close(conn, pstmt, rs);
         }
-        
         return dto;
     }
-    //jlpt 급수별 단어 검색
+
+    // 3. JLPT 급수별 검색
     public ArrayList<WordDTO> JlptSearch(String jlpt) {
         ArrayList<WordDTO> list = new ArrayList<>();
-        String sql = "select * from japanese_word where jlpt=?";
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        String sql = "SELECT * FROM japanese_word WHERE jlpt LIKE ?"; // LIKE로 변경 추천
         
         try {
             conn = DBM.getConnection();
             pstmt = conn.prepareStatement(sql);
-
             pstmt.setString(1, "%" + jlpt + "%");
             rs = pstmt.executeQuery();
             
             while(rs.next()) {
                 WordDTO dto = new WordDTO();
                 dto.setWord_id(rs.getInt("word_id"));
-                dto.setWord(rs.getString("word"));      // 한자
-                dto.setDoc(rs.getString("doc"));        // 음독 (컬럼명 doc)
-                dto.setKorean(rs.getString("korean"));  // 뜻 (컬럼명 korean)
-                dto.setJlpt(rs.getString("jlpt"));      // 급수
-                
+                dto.setWord(rs.getString("word"));
+                dto.setDoc(rs.getString("doc"));
+                dto.setKorean(rs.getString("korean"));
+                dto.setJlpt(rs.getString("jlpt"));
                 list.add(dto);
             }
         } catch(Exception e) {
@@ -124,60 +125,113 @@ public class WordDAO {
         } finally {
             DBM.close(conn, pstmt, rs);
         }
-        
         return list;
     }
-	 // 퀴즈 관리 (세션을 받아서 처리해주는 헬퍼 메소드)
+
+    // 4. 오늘의 퀴즈 세팅 (세션 처리 헬퍼)
     public void setTodayQuiz(HttpSession session) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         String today = sdf.format(new Date());
 
         String sessionDate = (String) session.getAttribute("quizDate");
 
-        // 오늘 날짜와 세션 날짜가 다르면 새로운 퀴즈 생성
         if (sessionDate == null || !today.equals(sessionDate)) {
-            WordDTO randomWord = getRandomWord(); // DB에서 랜덤 단어 가져오기
+            WordDTO randomWord = getRandomWord(); 
 
             if (randomWord != null) {
                 session.setAttribute("quizWord", randomWord);
             } else {
                 WordDTO defaultWord = new WordDTO();
-                defaultWord.setWord("단어 없음");
-                defaultWord.setKorean("DB에 단어가 없습니다");
+                defaultWord.setWord("준비중");
+                defaultWord.setKorean("데이터가 없습니다");
                 session.setAttribute("quizWord", defaultWord);
             }
-
-            session.setAttribute("quizDate", today); // 오늘 날짜 기록
-        } else {
-            // 이미 오늘의 퀴즈가 있으면 아무 작업도 안 함
-            System.out.println("오늘의 퀴즈 이미 존재: " + session.getAttribute("quizWord"));
+            session.setAttribute("quizDate", today);
         }
     }
-	  //word_id로 검색
-		public WordDTO wordSelect(int word_id){
-			WordDTO dto = new WordDTO();
-			String sql="SELECT * FROM japanese_word WHERE word_id = ?";
-			try {
-				conn=DBM.getConnection();
-				pstmt=conn.prepareStatement(sql);
-				pstmt.setInt(1, word_id);
-				
-				rs=pstmt.executeQuery();
-				
-				if(rs.next()) {
-					dto.setWord_id(rs.getInt("word_id"));
-					dto.setWord(rs.getString("word"));
-					dto.setDoc(rs.getString("doc"));
-					dto.setKorean(rs.getString("korean"));
-					dto.setJlpt(rs.getString("jlpt"));
-				}
-			}catch(Exception e) {
-				e.printStackTrace();
-			}finally {
-				DBM.close(conn, pstmt, rs);
-			}
-			return dto;
-		}
-		
-	
+
+    // 5. word_id로 상세 조회
+    public WordDTO wordSelect(int word_id){
+        WordDTO dto = new WordDTO();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        String sql="SELECT * FROM japanese_word WHERE word_id = ?";
+        try {
+            conn=DBM.getConnection();
+            pstmt=conn.prepareStatement(sql);
+            pstmt.setInt(1, word_id);
+            rs=pstmt.executeQuery();
+            
+            if(rs.next()) {
+                dto.setWord_id(rs.getInt("word_id"));
+                dto.setWord(rs.getString("word"));
+                dto.setDoc(rs.getString("doc"));
+                dto.setKorean(rs.getString("korean"));
+                dto.setJlpt(rs.getString("jlpt"));
+            }
+        }catch(Exception e) {
+            e.printStackTrace();
+        }finally {
+            DBM.close(conn, pstmt, rs);
+        }
+        return dto;
+    }
+    
+    // 6. 자동완성 검색
+    public List<WordDTO> autoComplete(String keyword) {
+        List<WordDTO> list = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        String sql = "SELECT * FROM japanese_word WHERE word LIKE ? OR korean LIKE ? LIMIT 10";
+
+        try {
+            conn = DBM.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, "%" + keyword + "%");
+            pstmt.setString(2, "%" + keyword + "%");
+            
+            rs = pstmt.executeQuery();
+            
+            while(rs.next()) {
+                WordDTO dto = new WordDTO();
+                dto.setWord_id(rs.getInt("word_id"));
+                dto.setWord(rs.getString("word"));
+                dto.setKorean(rs.getString("korean"));
+                list.add(dto);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            DBM.close(conn, pstmt, rs);
+        }
+        return list;
+    }
+    
+ // ★ [신규] 관리자 승인 시 실제 단어장에 등록 (INSERT)
+    public int insertWord(WordDTO dto) {
+        int result = 0;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        String sql = "INSERT INTO japanese_word (word, doc, korean, jlpt) VALUES (?, ?, ?, ?)";
+        
+        try {
+            conn = DBM.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, dto.getWord());
+            pstmt.setString(2, dto.getDoc());
+            pstmt.setString(3, dto.getKorean());
+            pstmt.setString(4, dto.getJlpt());
+            
+            result = pstmt.executeUpdate();
+        } catch(Exception e) {
+            e.printStackTrace();
+        } finally {
+            DBM.close(conn, pstmt);
+        }
+        return result;
+    }
 }

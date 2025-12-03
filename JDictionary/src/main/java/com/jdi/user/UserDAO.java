@@ -19,7 +19,11 @@ public class UserDAO {
 	    int result = 0;
 	    Connection conn = null;
 	    PreparedStatement pstmt = null;
-	    String sql = "INSERT INTO jdi_login VALUES (?, ?, ?, ?, ?)"; // 컬럼 순서 주의
+	    
+	    // ★★★ [수정 포인트] ★★★
+	    // 테이블에 컬럼이 추가되었기 때문에, 어떤 컬럼에 넣을지 '이름'을 꼭 명시해야 합니다.
+	    // jdi_profile과 jdi_role은 명시하지 않으면 DB에 설정된 '기본값(Default)'으로 자동 입력됩니다.
+	    String sql = "INSERT INTO jdi_login (jdi_user, jdi_pass, jdi_name, jdi_email, jdi_phone) VALUES (?, ?, ?, ?, ?)";
 	    
 	    try {
 	        conn = DBM.getConnection();
@@ -27,9 +31,8 @@ public class UserDAO {
 	        
 	        pstmt.setString(1, dto.getJdi_user());
 	        
-	        // ★★★ [변경] 비밀번호 암호화 적용 ★★★
-	        // 사용자가 입력한 비번(1234) -> 암호화(a6xn...) -> DB 저장
-	        String securePw = SHA256.encodeSha256(dto.getJdi_pass());
+	        // 비밀번호 암호화
+	        String securePw = com.jdi.util.SHA256.encodeSha256(dto.getJdi_pass());
 	        pstmt.setString(2, securePw); 
 	        
 	        pstmt.setString(3, dto.getJdi_name());
@@ -37,7 +40,10 @@ public class UserDAO {
 	        pstmt.setString(5, dto.getJdi_phone());
 	        
 	        result = pstmt.executeUpdate();
+	        
 	    } catch (Exception e) {
+	        // 에러가 나면 콘솔에 빨간 글씨로 이유가 나옵니다. 꼭 확인해보세요!
+	        System.out.println(">> 회원가입 실패! 에러 로그를 확인하세요:");
 	        e.printStackTrace();
 	    } finally {
 	        DBM.close(conn, pstmt);

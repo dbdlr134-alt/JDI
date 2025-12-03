@@ -1,133 +1,312 @@
-/* === 페리윙클 테마 컬러 정의 === */
+@charset "UTF-8";
+
+/* ========================================= */
+/* 1. 기본 설정 및 변수 (Color Variables)    */
+/* ========================================= */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
 :root {
-    --main-color: #9EADFF;       /* 기본 페리윙클 */
-    --hover-color: #8A9BE5;      /* 버튼 호버용 조금 진한 색 */
-    --bg-color: #F8F9FF;         /* 아주 연한 페리윙클 배경 */
-    --text-dark: #4A4F63;        /* 진한 회색 텍스트 */
-    --text-light: #888C9F;       /* 연한 회색 텍스트 */
+    --main-color: #9EADFF;       /* 페리윙클 (메인 테마색) */
+    --hover-color: #8A9BE5;      /* 버튼 호버 색상 */
+    --bg-color: #F8F9FF;         /* 전체 배경색 (아주 연한 파랑) */
+    --text-dark: #333333;        /* 진한 글씨 */
+    --text-gray: #666666;        /* 연한 글씨 */
+    --white: #ffffff;
+    --shadow: 0 5px 20px rgba(158, 173, 255, 0.15); /* 부드러운 그림자 */
 }
 
-/* 공통 설정 */
-* { margin: 0; padding: 0; box-sizing: border_box; font-family: 'Noto Sans KR', sans-serif; }
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif; }
 body { background-color: var(--bg-color); color: var(--text-dark); }
-a { text-decoration: none; color: inherit; }
-.inner { width: 100%; max-width: 1000px; margin: 0 auto; padding: 0 20px; }
+a { text-decoration: none; color: inherit; cursor: pointer; }
+ul { list-style: none; }
+button { font-family: 'Noto Sans KR', sans-serif; }
 
-/* 1. 상단 헤더 */
+/* 공통 레이아웃 컨테이너 */
+.inner { width: 100%; max-width: 1000px; margin: 0 auto; padding: 0 20px; position: relative; }
+.center-box { display: flex; justify-content: center; width: 100%; }
+
+
+/* ========================================= */
+/* 2. 헤더 & 네비게이션 (Header & Nav)       */
+/* ========================================= */
 .top-header {
-    background-color: #fff;
-    box-shadow: 0 2px 10px rgba(158, 173, 255, 0.1); /* 페리윙클 그림자 */
+    background-color: var(--white);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     height: 60px;
     display: flex; align-items: center;
-}
-.top-header .inner { display: flex; justify-content: space-between; width: 100%; }
-.logo { font-weight: 700; color: var(--main-color); font-size: 22px; }
-.util-nav .btn-login { font-size: 14px; color: var(--text-light); margin-right: 15px; font-weight: 500; transition: color 0.3s; }
-.util-nav .btn-login:hover { color: var(--main-color); }
-
-/* 2. 검색 영역 */
-.search-section {
-    background-color: #fff;
-    padding: 80px 0 60px;
-    text-align: center;
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
-    box-shadow: 0 5px 20px rgba(158, 173, 255, 0.1);
-}
-.title-area h1 { font-size: 40px; margin-bottom: 10px; font-weight: 700; color: var(--text-dark); }
-.sub-title { color: var(--text-light); margin-bottom: 40px; }
-.search-box { width: 100%; max-width: 580px; margin: 0 auto; position: relative; }
-.search-input {
-    width: 100%; height: 60px;
-    border: 3px solid var(--main-color); /* 페리윙클 테두리 */
-    border-radius: 30px; /* 둥글게 */
-    padding: 0 70px 0 25px;
-    font-size: 18px; outline: none;
-    transition: box-shadow 0.3s;
-}
-.search-input:focus { box-shadow: 0 0 15px rgba(158, 173, 255, 0.3); }
-.search-btn {
-    position: absolute; right: 5px; top: 5px;
-    width: 60px; height: 50px;
-    background-color: var(--main-color); /* 페리윙클 배경 */
-    border: none; border-radius: 25px;
-    color: white; font-weight: bold; font-size: 16px;
-    cursor: pointer; transition: background-color 0.3s;
-}
-.search-btn:hover { background-color: var(--hover-color); }
-
-/* 3. 데일리 콘텐츠 (퀴즈 카드만) */
-.daily-section { padding: 50px 0; }
-.center-box { display: flex; justify-content: center; }
-.card {
-    background: #fff;
-    border-radius: 20px; /* 둥근 모서리 */
-    width: 380px; padding: 35px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(158, 173, 255, 0.15); /* 부드러운 그림자 */
-    border: 1px solid rgba(158, 173, 255, 0.2);
-}
-.card-header {
-    color: var(--main-color); font-size: 15px;
-    margin-bottom: 25px; font-weight: 600; letter-spacing: 1px;
-}
-.quiz-question { font-size: 42px; font-weight: bold; margin-bottom: 15px; color: var(--text-dark); }
-.quiz-desc { color: var(--text-light); font-size: 17px; margin-bottom: 35px; }
-
-/* 버튼 스타일 (페리윙클 버전) */
-.btn-action.peri {
-    display: inline-block; padding: 12px 35px;
-    border-radius: 30px;
-    background-color: var(--main-color);
-    color: #fff;
-    font-size: 16px; font-weight: bold;
-    transition: 0.3s; box-shadow: 0 5px 15px rgba(158, 173, 255, 0.3);
-}
-.btn-action.peri:hover { background-color: var(--hover-color); transform: translateY(-2px); }
-
-/* === [헤더 전용 스타일] === */
-.top-header {
-    background-color: #fff;
-    box-shadow: 0 2px 10px rgba(158, 173, 255, 0.1);
-    height: 60px;
-    display: flex; align-items: center;
-    /* 상단 고정 (선택사항) */
     position: sticky; top: 0; z-index: 1000;
 }
 
-.top-header .inner {
-    display: flex; justify-content: space-between; align-items: center;
-    width: 100%; max-width: 1000px; margin: 0 auto; padding: 0 20px;
-}
+.top-header .inner { display: flex; justify-content: space-between; align-items: center; }
 
 .logo a {
-    font-weight: 700; color: var(--main-color); font-size: 22px;
-    transition: 0.3s;
+    font-weight: 700; color: var(--main-color); font-size: 24px;
+    letter-spacing: -0.5px;
 }
-.logo a:hover { color: var(--hover-color); }
 
-/* 네비게이션 메뉴들 */
-.util-nav { display: flex; align-items: center; gap: 15px; }
-
-.util-nav a {
-    font-size: 14px; color: var(--text-light); font-weight: 500;
-    transition: color 0.3s;
+.util-nav { 
+    display: flex; align-items: center; gap: 15px; 
+    position: relative; /* 드롭다운 기준점 */
 }
-.util-nav a:hover { color: var(--main-color); }
 
-/* 환영 메시지 (누구님) */
-.user-welcome { font-size: 14px; color: #333; margin-right: 5px; }
-.user-welcome b { color: var(--main-color); }
+.btn-menu {
+    font-size: 20px; color: var(--text-gray); font-weight: bold;
+    padding: 5px; transition: 0.3s;
+}
+.btn-menu:hover { color: var(--main-color); }
 
-/* 버튼 포인트 주기 */
-.btn-join, .btn-mypage {
-    background-color: var(--bg-color);
-    color: var(--main-color) !important;
-    padding: 5px 12px;
+
+/* ========================================= */
+/* 3. 헤더 드롭다운 메뉴 (Dropdown Menu)     */
+/* ========================================= */
+.dropdown-content {
+    display: none; /* 기본 숨김 */
+    position: absolute;
+    top: 45px; right: 0;
+    background-color: var(--white);
+    min-width: 260px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
     border-radius: 15px;
-    font-size: 13px !important;
+    padding: 20px;
+    border: 1px solid #eee;
+    z-index: 9999;
 }
-.btn-join:hover, .btn-mypage:hover {
-    background-color: var(--main-color);
-    color: #fff !important;
+
+.dropdown-content.show {
+    display: block;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-profile-area { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+.menu-img {
+    width: 50px; height: 50px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--main-color);
+}
+.menu-text { display: flex; flex-direction: column; }
+.menu-name { font-weight: bold; color: var(--text-dark); font-size: 16px; }
+.menu-point { font-size: 14px; color: #f5a623; font-weight: bold; margin-top: 4px; }
+
+.menu-divider { height: 1px; background: #eee; margin: 10px 0; }
+
+.menu-item {
+    display: block; padding: 10px; text-align: center;
+    border-radius: 8px; font-size: 14px; color: var(--text-gray); transition: 0.2s;
+    margin-bottom: 5px;
+}
+.menu-item:hover { background-color: #f5f6fa; color: var(--main-color); }
+
+.menu-item.logout { color: #ff6b6b; }
+.menu-item.logout:hover { background-color: #fff5f5; }
+
+.menu-item.login-btn { background-color: var(--main-color); color: white !important; font-weight: bold; }
+.menu-item.login-btn:hover { background-color: var(--hover-color); }
+.menu-msg { text-align: center; color: #999; font-size: 13px; margin-bottom: 10px; }
+
+
+/* ========================================= */
+/* 4. 메인 검색창 (Search Section)           */
+/* ========================================= */
+.search-section {
+    background-color: var(--white);
+    padding: 60px 0 50px; text-align: center;
+    border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;
+    box-shadow: var(--shadow);
+    margin-bottom: 40px;
+}
+.title-area h1 { font-size: 36px; margin-bottom: 10px; color: var(--text-dark); }
+.sub-title { color: var(--text-gray); margin-bottom: 40px; }
+
+.search-box { width: 100%; max-width: 580px; margin: 0 auto; position: relative; }
+.search-input {
+    width: 100%; height: 60px;
+    border: 2px solid var(--main-color); border-radius: 30px;
+    padding: 0 80px 0 25px; font-size: 16px; outline: none;
+    transition: box-shadow 0.3s;
+}
+.search-input:focus { box-shadow: 0 0 15px rgba(158, 173, 255, 0.4); }
+.search-btn {
+    position: absolute; right: 6px; top: 6px;
+    width: 70px; height: 48px;
+    background-color: var(--main-color); color: white;
+    border: none; border-radius: 24px;
+    font-weight: bold; cursor: pointer; transition: 0.3s;
+}
+.search-btn:hover { background-color: var(--hover-color); }
+
+
+/* ========================================= */
+/* 5. 카드 & 섹션 스타일 (Card Layout)       */
+/* ========================================= */
+.daily-section { padding-bottom: 60px; }
+.card {
+    background: var(--white); border-radius: 20px;
+    padding: 30px; text-align: center;
+    box-shadow: var(--shadow); border: 1px solid #fff;
+    width: 350px;
+}
+.card-header { color: var(--main-color); font-weight: bold; margin-bottom: 20px; font-size: 14px; }
+.card-body h2 { font-size: 40px; margin-bottom: 10px; color: var(--text-dark); }
+.card-body p { color: var(--text-gray); margin-bottom: 30px; }
+
+.btn-action {
+    display: inline-block; padding: 12px 30px; border-radius: 30px;
+    font-weight: bold; font-size: 15px; transition: 0.3s; border: none; cursor: pointer;
+}
+.btn-action.peri { background-color: var(--main-color); color: white; box-shadow: 0 4px 10px rgba(158, 173, 255, 0.4); }
+.btn-action.peri:hover { background-color: var(--hover-color); transform: translateY(-2px); }
+
+/* JLPT 라디오 버튼 스타일 */
+.radio-label {
+    cursor: pointer; padding: 5px 10px; border-radius: 15px;
+    background: #eee; margin: 0 2px; font-size: 14px; color: #555;
+}
+input[type="radio"]:checked + .radio-label {
+    background: var(--main-color); color: white;
+}
+input[type="radio"] { display: none; }
+
+
+/* ========================================= */
+/* 6. 로그인/회원가입/수정 폼 (Forms)        */
+/* ========================================= */
+.join-wrap, .login-wrap, .edit-container {
+    display: flex; justify-content: center; padding: 50px 0;
+}
+.join-box, .login-box, .edit-container {
+    background: var(--white); width: 500px; padding: 40px;
+    border-radius: 20px; box-shadow: var(--shadow);
+}
+.join-title, .login-title { 
+    color: var(--main-color); font-size: 24px; font-weight: bold; 
+    margin-bottom: 30px; text-align: center; 
+}
+
+.input-group, .row { margin-bottom: 15px; }
+.input-label, .label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-gray); font-size: 14px; }
+
+.input-field, .input-edit {
+    width: 100%; height: 45px; padding: 0 15px;
+    border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none;
+    transition: 0.2s;
+}
+.input-field:focus, .input-edit:focus { border-color: var(--main-color); }
+.input-edit:read-only { background-color: #f5f5f5; color: #aaa; }
+
+.btn-submit, .btn-update, .btn-check {
+    width: 100%; height: 50px; background-color: var(--main-color); color: white;
+    border: none; border-radius: 10px; font-size: 16px; font-weight: bold;
+    cursor: pointer; margin-top: 15px; transition: 0.3s;
+}
+.btn-submit:hover, .btn-update:hover { background-color: var(--hover-color); }
+
+.error-msg { color: #ff6b6b; font-size: 12px; margin-top: 5px; display: none; }
+
+
+/* ========================================= */
+/* 7. 마이페이지 (My Page)                   */
+/* ========================================= */
+.mypage-container {
+    max-width: 1000px; margin: 50px auto;
+    display: flex; gap: 30px; padding: 0 20px;
+}
+.profile-card {
+    width: 300px; background: var(--white); padding: 30px;
+    border-radius: 20px; box-shadow: var(--shadow); text-align: center; height: fit-content;
+}
+.chart-section {
+    flex: 1; background: var(--white); padding: 40px;
+    border-radius: 20px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center;
+}
+.btn-edit-go {
+    display: block; width: 100%; padding: 12px; margin-top: 20px;
+    background: #f0f2f5; color: var(--text-gray); border-radius: 30px;
+    font-size: 14px; font-weight: bold; transition: 0.2s;
+}
+.btn-edit-go:hover { background: #e4e6eb; color: var(--text-dark); }
+
+.profile-selector { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+.profile-option img {
+    width: 70px; height: 70px; border-radius: 50%;
+    border: 3px solid #eee; transition: 0.2s; cursor: pointer;
+}
+.profile-option input:checked + img {
+    border-color: var(--main-color); transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(158,173,255,0.5);
+}
+
+
+/* ========================================= */
+/* 8. 검색 결과 목록 & 단어 상세 (Search List)*/
+/* ========================================= */
+.result-list { list-style: none; padding: 0; }
+.result-item {
+    background: var(--white); margin-bottom: 15px; padding: 20px;
+    border-radius: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    transition: 0.2s; border: 1px solid transparent;
+}
+.result-item:hover { border-color: var(--main-color); transform: translateY(-2px); }
+
+.result-item a { display: block; text-decoration: none; }
+.result-item .word { font-size: 20px; font-weight: bold; color: var(--text-dark); margin-right: 10px; }
+.result-item .doc { font-size: 14px; color: var(--text-gray); margin-right: 10px; }
+.result-item .jlpt { background: #eee; font-size: 12px; padding: 2px 6px; border-radius: 4px; color: #555; }
+.result-item .korean { display: block; margin-top: 8px; color: var(--text-gray); }
+
+.no-result { text-align: center; padding: 50px; color: #888; }
+
+
+/* ========================================= */
+/* 9. 자동완성 (Auto Complete) - [수정됨]    */
+/* ========================================= */
+.search-box {
+    position: relative;
+    z-index: 10; /* 박스 기준점 */
+}
+
+/* 1. 자동완성 박스 (하얀 배경 강제) */
+.auto-box {
+    position: absolute;
+    top: 65px;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff !important; /* 무조건 흰 배경 */
+    border: 1px solid #dcdcdc;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    z-index: 99999 !important; /* 화면 맨 앞으로 */
+    overflow: hidden;
+    display: none;
+}
+
+.auto-box.active { display: block; }
+
+/* 2. 글자 색상 (무조건 검은색) */
+.auto-item {
+    padding: 12px 20px !important;
+    cursor: pointer;
+    text-align: left;
+    border-bottom: 1px solid #f5f5f5;
+    font-size: 15px !important;
+    color: #333333 !important; /* 글자색 진한 회색 */
+    background-color: #ffffff !important; /* 아이템 배경 흰색 */
+}
+
+.auto-item:last-child { border-bottom: none; }
+
+/* 3. 마우스 올렸을 때 */
+.auto-item:hover {
+    background-color: #f0f2ff !important; /* 연한 파란색 배경 */
+    color: var(--main-color) !important;   /* 글자색 메인 컬러 */
+}
+
+.auto-item strong {
+    color: #000000 !important; /* 강조 글자는 완전 검정 */
+    font-weight: bold;
+    margin-right: 5px;
 }
