@@ -19,7 +19,14 @@
     <title><%= word.getWord() %> - 상세 정보</title>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/style/style.css">
     <style>
-        .view-container { max-width: 600px; margin: 80px auto; padding: 50px; background: #fff; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; }
+        .view-container { 
+            max-width: 600px; margin: 80px auto; padding: 50px; 
+            background: #fff; border-radius: 20px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;
+            
+            /* ★ [핵심 수정] 이 속성이 있어야 별 버튼이 이 박스 안 우측 상단에 붙습니다. */
+            position: relative; 
+        }
         .view-badge { display: inline-block; background: #e0f2f1; color: #00A295; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; }
         .view-word { font-size: 48px; color: #333; font-weight: bold; margin-bottom: 10px; }
         .view-doc { font-size: 20px; color: #888; margin-bottom: 40px; }
@@ -34,14 +41,30 @@
     <div class="view-container">
         <div class="view-badge"><%= word.getJlpt() %></div>
         
+        <div style="position: absolute; top: 30px; right: 30px;">
+            <a href="${pageContext.request.contextPath}/WordController?cmd=bookmark_toggle&word_id=<%= word.getWord_id() %>" 
+               style="text-decoration: none; font-size: 30px;">
+               <% 
+                  Boolean isBm = (Boolean)request.getAttribute("isBookmarked");
+                  // 로그인 상태이고 찜했다면 꽉 찬 별
+                  if(isBm != null && isBm) { 
+               %>
+                   <span style="color: gold;">★</span>
+               <% } else { %>
+                   <span style="color: #ccc;">☆</span>
+               <% } %>
+            </a>
+        </div>
+        
         <div class="view-word"><%= word.getWord() %></div>
+        
         <div class="view-doc"><%= word.getDoc() %></div>
         
         <div class="view-korean"><%= word.getKorean() %></div>
         
         <div>
-            <a href="${pageContext.request.contextPath}/request/requesr_edit.jsp?word_id=<%= word.getWord_id() %>"
-   class="btn-edit-req">
+            <a href="${pageContext.request.contextPath}/request/requesr_word.jsp?word_id=<%= word.getWord_id() %>"
+               class="btn-edit-req">
                 🛠️ 정보 수정 요청하기
             </a>
         </div>

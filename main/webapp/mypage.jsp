@@ -65,6 +65,10 @@
             <p class="user-email"><%= myUser.getJdi_email() %></p>
             
             <a href="pwd_check.jsp" class="btn-mypage btn-gray">내 정보 수정 ></a>
+            
+            <a href="${pageContext.request.contextPath}/WordController?cmd=bookmark_list" class="btn-mypage" style="border:1px solid gold; color:#e6a23c; background:#fff;">
+    ⭐ 즐겨찾기 단어장
+</a>
 
             <a href="${pageContext.request.contextPath}/QuizController?cmd=quiz_incorrect" class="btn-mypage btn-outline-red">
                 📝 오답노트 확인 (<%= wrongWords %>개)
