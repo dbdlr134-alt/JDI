@@ -3,6 +3,7 @@ package com.mjdi.user;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
 
 import com.mjdi.util.DBM;
 import com.mjdi.util.SHA256;
@@ -19,6 +20,9 @@ public class UserDAO {
     private static final String API_KEY = "NCSJDONCTN2IMRMR"; // 실제 API Key
     private static final String API_SECRET = "BPTVHSKTAXBMETVZCMXAOBJVQMURPJUL"; // 실제 API Secret
     private static final String SENDER_PHONE = "01065613724"; // 발신번호 (하이픈 제외)
+    
+    private static UserDAO instance = new UserDAO();
+    public static UserDAO getInstance() { return instance; }
 
     // ==========================================
     // 1. 회원가입 (INSERT)
@@ -272,5 +276,49 @@ public class UserDAO {
         } catch (Exception e) { e.printStackTrace(); }
         finally { DBM.close(conn, pstmt); }
         return result;
+    }
+    
+ // 10. [신규] 전체 회원 수 조회
+    public int getUserCount() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM jdi_login";
+        
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return count;
+    }
+ // 11. [신규] 전체 회원 목록 조회
+    public ArrayList<UserDTO> getAllUsers() {
+        ArrayList<UserDTO> list = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        // 비밀번호(jdi_pass)를 제외한 모든 정보를 가져옵니다.
+        String sql = "SELECT jdi_user, jdi_name, jdi_email, jdi_phone, jdi_profile, jdi_role FROM jdi_login ORDER BY jdi_user ASC";
+        
+        try {
+            conn = DBM.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            
+            while(rs.next()) {
+                UserDTO dto = new UserDTO();
+                dto.setJdi_user(rs.getString("jdi_user"));
+                dto.setJdi_name(rs.getString("jdi_name"));
+                dto.setJdi_email(rs.getString("jdi_email"));
+                dto.setJdi_phone(rs.getString("jdi_phone"));
+                dto.setJdi_profile(rs.getString("jdi_profile"));
+                dto.setJdi_role(rs.getString("jdi_role"));
+                list.add(dto);
+            }
+        } catch (Exception e) { e.printStackTrace(); } 
+        finally { DBM.close(conn, pstmt, rs); }
+        
+        return list;
     }
 }

@@ -32,7 +32,16 @@ public class UserServiceFactory {
             action = new UserFindPwService();
         }else if (cmd.equals("/request_profile.do")) {
             action = new ProfileRequestService();
+        }else if (cmd.equals("/profileReqList.do")) {
+            action = new ProfileReqListService();
+        } else if (cmd.equals("/approveProfileReq.do")) {
+            action = new ProfileReqApproveService();
+        } else if (cmd.equals("/rejectProfileReq.do")) {
+            action = new ProfileReqRejectService();
+        }else if (cmd.equals("/userList.do")) {
+            action = new UserListService();
         }
+
 
         return action;
     }

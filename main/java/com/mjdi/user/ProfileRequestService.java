@@ -1,58 +1,81 @@
 package com.mjdi.user;
 
+import java.io.File;
 import java.io.IOException;
-
+import java.nio.file.Paths;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import com.mjdi.util.Action;
 
 public class ProfileRequestService implements Action {
-    
-    private static final int COST = 50; 
 
     @Override
-    public void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void process(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html; charset=UTF-8");
+
         UserDTO user = (UserDTO) request.getSession().getAttribute("sessionUser");
-        
         if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login.jsp");
+            response.getWriter().write("<script>alert('로그인이 필요합니다.'); location.href='login.jsp';</script>");
             return;
         }
 
         String userId = user.getJdi_user();
-        PointDAO pointDao = PointDAO.getInstance();
-        UserDAO userDao = new UserDAO();
-        
-        // 1. 포인트 잔액 확인
-        if (!pointDao.checkPointSufficient(userId, COST)) {
-            response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().write("<script>alert('포인트가 부족합니다! (" + COST + " P 필요)'); location.href='mypage.jsp';</script>");
+
+        // 1. 업로드 파일 받기
+        Part filePart = request.getPart("profileImage");
+        if (filePart == null || filePart.getSize() == 0) {
+            response.getWriter().write("<script>alert('프로필 이미지를 선택해 주세요.'); history.back();</script>");
             return;
         }
 
-        // 2. 포인트 차감 실행
-        int logResult = pointDao.addPoint(userId, -COST, "새 프로필 등록 신청");
-        
-        if (logResult <= 0) {
-            response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().write("<script>alert('포인트 차감 중 오류가 발생했습니다.'); history.back();</script>");
-            return; 
-        }
+        // 원본 파일명
+        String submittedFileName = Paths.get(filePart.getSubmittedFileName())
+                                        .getFileName().toString();
 
-        // 3. DB에 프로필 경로 업데이트 (새 사진이 등록된 것으로 간주)
-        String newProfileName = "profile5.png"; // 새로운 프로필 파일명을 임의 지정
-        int updateRes = userDao.updateProfile(userId, newProfileName);
-        
-        // 4. 세션 갱신 및 결과 처리
-        if (updateRes > 0) {
-            user.setJdi_profile(newProfileName); // 세션 업데이트
-            
-            response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().write("<script>alert('" + COST + " P 차감! 새로운 프로필 사진이 등록되었습니다.'); location.href='mypage.jsp';</script>");
-        } else {
-             response.getWriter().write("<script>alert('프로필 등록 중 오류가 발생했습니다.'); location.href='mypage.jsp';</script>");
-        }
+        // 확장자 추출
+        String ext = "";
+        int dot = submittedFileName.lastIndexOf(".");
+        if (dot != -1) ext = submittedFileName.substring(dot);
+
+        // 저장 파일명: profile_유저ID_타임스탬프.ext
+        String saveFileName = "profile_" + userId + "_" + System.currentTimeMillis() + ext;
+
+        // 저장 경로 (예: /upload/profile/)
+        String uploadPath = request.getServletContext().getRealPath("/upload/profile");
+        File uploadDir = new File(uploadPath);
+        if (!uploadDir.exists()) uploadDir.mkdirs();
+
+        // 실제 파일 저장
+        filePart.write(uploadPath + File.separator + saveFileName);
+
+        // DB에는 상대 경로만 저장 (예: upload/profile/파일명)
+        String imagePath = "upload/profile/" + saveFileName;
+
+        // 2. 신청 메모
+        String comment = request.getParameter("comment");
+
+        // 3. DB에 신청 기록 저장 (status = PENDING)
+        ProfileReqDTO dto = new ProfileReqDTO();
+        dto.setUserId(userId);
+        dto.setImagePath(imagePath);
+        dto.setComment(comment);
+        dto.setStatus("PENDING");
+
+        ProfileReqDAO dao = ProfileReqDAO.getInstance();
+        dao.insertRequest(dto);
+
+        // 4. 완료 안내
+        response.getWriter().write(
+            "<script>alert('새 프로필 이미지 신청이 접수되었습니다. 관리자 승인 후 적용됩니다.');"
+          + "location.href='mypage.jsp';</script>"
+        );
     }
 }
+
+

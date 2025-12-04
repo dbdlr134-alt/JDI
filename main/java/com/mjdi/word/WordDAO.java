@@ -132,4 +132,19 @@ public class WordDAO {
         finally { DBM.close(conn, pstmt); }
         return result;
     }
+    
+ // 7. [신규] 총 단어 수 조회
+    public int getTotalWordCount() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM japanese_word";
+        
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return count;
+    }
 }

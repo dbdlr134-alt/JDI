@@ -33,6 +33,11 @@ public class ApplyServiceFactory {
         } else if (cmd.equals("/rejectEdit.apply")) {
             action = new ApplyEditRejectService();
         }
+        
+        // 어드민
+        else if (cmd.equals("/adminMain.apply")) {
+            action = new AdminMainService();
+        }
 
         return action;
     }

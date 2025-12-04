@@ -236,4 +236,35 @@ public class ApplyDAO {
         // 2. 신청 상태를 'OK'로 변경 (수정 신청 테이블)
         updateEditStatus(dto.getReqId(), "OK");
     }
+    
+ // 3. [신규] 신규 등록 대기 건수 조회
+    public int getNewWaitCount() {
+        int count = 0;
+        String sql = "SELECT COUNT(*) FROM jdi_word_req WHERE status = 'WAIT'";
+        
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return count;
+    }
+    
+    // 4. [신규] 수정 신청 대기 건수 조회
+    public int getEditWaitCount() {
+        int count = 0;
+        // jdi_word_edit_request 테이블에서 조회
+        String sql = "SELECT COUNT(*) FROM jdi_word_edit_request WHERE status = 'WAIT'";
+        
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return count;
+    }
 }

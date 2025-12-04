@@ -24,8 +24,8 @@ public class UserLoginService implements Action {
             request.getSession().setAttribute("sessionUser", user);
             
             if("ADMIN".equals(user.getJdi_role())) {
-                // ★ [수정] 관리자 메인 대시보드로 이동
-                response.sendRedirect(ctx + "/admin/main.jsp");
+                // [수정] admin/main.jsp로 바로 리다이렉트 대신, 데이터 세팅하는 서비스로 보냄
+                response.sendRedirect(ctx + "/adminMain.apply"); 
             } else {
                 // 일반 회원은 사용자 메인으로 이동
                 response.sendRedirect(ctx + "/index.jsp");
