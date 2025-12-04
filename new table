@@ -58,3 +58,12 @@ CREATE TABLE jdi_word_edit_request (
 
 -- 사용자가 푼 문제 수를 저장할 컬럼 추가 (기본값 0)
 ALTER TABLE jdi_login ADD jdi_solve_count INT DEFAULT 0;
+
+CREATE TABLE profile_request (
+    req_id     INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    VARCHAR(50) NOT NULL,
+    image_path VARCHAR(255) NOT NULL,
+    comment    VARCHAR(500),
+    status     VARCHAR(20) DEFAULT 'PENDING',
+    req_date   DATETIME DEFAULT NOW()
+);
