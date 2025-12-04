@@ -1,10 +1,47 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.mjdi.user.UserDTO" %>
+<%@ page import="java.io.File, java.util.List, java.util.ArrayList" %>
 <%
     UserDTO myUser = (UserDTO)session.getAttribute("sessionUser");
     if(session.getAttribute("isPwdChecked") == null) {
-    response.sendRedirect("pwd_check.jsp");
-    return;
+        response.sendRedirect("pwd_check.jsp");
+        return;
+    }
+
+    // ✅ /images 폴더에서 profile*.png 파일 자동으로 모으기
+    String imgDir = application.getRealPath("/images");
+    File folder = new File(imgDir);
+    File[] files = folder.listFiles();
+    List<String> profileList = new ArrayList<>();
+
+    if (files != null) {
+        for (File f : files) {
+            String name = f.getName();
+            // 파일명이 profile로 시작하고 .png로 끝나면 후보로 사용
+            if (name.startsWith("profile") && name.endsWith(".png")) {
+                profileList.add(name);
+            }
+        }
+    }
+
+    String ctx = request.getContextPath();
+
+    // ✅ 현재 프로필이 기본 이미지 목록에 포함되어 있는지 확인
+    String currentProfile = (myUser != null) ? myUser.getJdi_profile() : null;
+    boolean showCustomProfile = false;
+
+    if (currentProfile != null && !currentProfile.trim().isEmpty()) {
+        boolean inDefaultList = false;
+        for (String p : profileList) {
+            if (p.equals(currentProfile)) {
+                inDefaultList = true;
+                break;
+            }
+        }
+        // 기본 profile*.png 에 없는 값이면 "커스텀 프로필"로 취급
+        if (!inDefaultList && !currentProfile.startsWith("profile")) {
+            showCustomProfile = true;
+        }
     }
 %>
 <!DOCTYPE html>
@@ -36,22 +73,22 @@
         .btn-update { 
             width: 100%;
             padding: 15px; 
-            /* ★ [수정] var(--main-color) 대신 고정된 파란색 계열 색상 적용 */
             background: #0C4DA1; 
             color: #fff; 
             border: none; border-radius: 30px; 
             font-size: 16px; font-weight: bold; cursor: pointer;
         }
-        
-        /* 호버 색상도 적용합니다. (만약 var(--hover-color)가 작동하지 않는다면) */
         .btn-update:hover { 
-            background-color: #093b7c; /* 진한 파란색 계열 */
+            background-color: #093b7c;
         }
 
         /* === 2. 프로필 선택용 스타일 === */
         .profile-selector {
             display: flex; 
-            justify-content: center; gap: 15px; margin-bottom: 30px;
+            justify-content: center; 
+            gap: 15px; 
+            margin-bottom: 30px;
+            flex-wrap: wrap;
         }
         .profile-option {
             cursor: pointer; 
@@ -85,30 +122,38 @@
             </p>
             
             <div class="profile-selector">
-                <label class="profile-option">
-                    <input type="radio" name="profile" value="profile1.png" <%= "profile1.png".equals(myUser.getJdi_profile()) ? "checked" : "" %>>
-                    <img src="<%= request.getContextPath() %>/images/profile1.png" alt="1">
+                <%-- ✅ 기본 profile*.png 이미지들 출력 --%>
+                <%
+                    for (String p : profileList) {
+                %>
+                    <label class="profile-option">
+                        <input type="radio" name="profile" value="<%= p %>"
+                            <%= p.equals(currentProfile) ? "checked" : "" %> >
+                        <img src="<%= ctx %>/images/<%= p %>" alt="<%= p %>">
+                    </label>
+                <%
+                    }
+                %>
+
+                <%-- ✅ 커스텀(신청 승인) 프로필이 있을 경우 별도로 표시 --%>
+                <%
+                    if (showCustomProfile) {
+                %>
+                    <label class="profile-option">
+                        <input type="radio" name="profile" value="<%= currentProfile %>" checked>
+                        <!-- currentProfile 이 'upload/profile/xxx.png' 형태라고 가정 -->
+                        <img src="<%= ctx %>/<%= currentProfile %>" alt="현재 프로필">
+                    </label>
+                <%
+                    }
+                %>
+
+                <%-- ✅ 새 프로필 신청 버튼은 그대로 유지 --%>
+                <label class="profile-option"
+                       onclick="location.href='<%= ctx %>/request_profile.jsp'; return false;">
+                    <img src="<%= ctx %>/images/newprofile.png" alt="새 프로필 신청">
                 </label>
-                
-                <label class="profile-option">
-                    <input type="radio" name="profile" value="profile2.png" <%= "profile2.png".equals(myUser.getJdi_profile()) ? "checked" : "" %>>
-                    <img src="<%= request.getContextPath() %>/images/profile2.png" alt="2">
-                </label>
-                
-                <label class="profile-option">
-                    <input type="radio" name="profile" value="profile3.png" <%= "profile3.png".equals(myUser.getJdi_profile()) ? "checked" : "" %>>
-                    <img src="<%= request.getContextPath() %>/images/profile3.png" alt="3">
-                </label>
-                
-                <label class="profile-option">
-                    <input type="radio" name="profile" value="profile4.png" <%= "profile4.png".equals(myUser.getJdi_profile()) ? "checked" : "" %>>
-                    <img src="<%= request.getContextPath() %>/images/profile4.png" alt="4">
-                </label>
-                
-                <label class="profile-option" onclick="location.href='${pageContext.request.contextPath}/request_profile.jsp'; return false;">
-                    <img src="<%= request.getContextPath() %>/images/profile_plus.png" alt="+"> 
-                </label>
-            </div>
+			</div>
 
             <div class="row">
                 <span class="label">아이디 (수정 불가)</span>

@@ -34,15 +34,15 @@
         <div class="dashboard-grid">
             <div class="stat-card">
                 <h3>전체 회원 수</h3>
-                <strong>14</strong>
+                <strong>${totalUser}</strong> 
             </div>
             <div class="stat-card">
                 <h3>신규 신청 대기</h3>
-                <strong style="color:#e53935;">3</strong>
+                <strong style="color:#e53935;">${newRequest}</strong>
             </div>
             <div class="stat-card">
                 <h3>총 등록 단어</h3>
-                <strong>1,205</strong>
+                <strong>${totalWord}</strong>
             </div>
         </div>
         
@@ -63,8 +63,15 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="menu-item" onclick="alert('준비 중인 기능입니다.')">
+                    <a href="<%= ctx %>/userList.do" class="menu-item">
                         <span>👥 회원 목록 조회 및 관리</span>
+                        <span class="arrow">›</span>
+                    </a>
+                </li>
+                <!-- ✅ 새로 추가된 메뉴: 프로필 이미지 변경 신청 관리 -->
+                <li>
+                    <a href="<%= ctx %>/profileReqList.do" class="menu-item">
+                        <span>🖼️ 프로필 <strong>이미지 변경</strong> 신청 관리</span>
                         <span class="arrow">›</span>
                     </a>
                 </li>

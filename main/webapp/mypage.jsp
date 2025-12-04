@@ -8,20 +8,34 @@
     if(myUser == null) { response.sendRedirect("login.jsp"); return; }
     
     String userId = myUser.getJdi_user();
+    String ctx = request.getContextPath();   // ✅ 컨텍스트 루트
     
     // 1. 포인트 조회
     int currentPoint = PointDAO.getInstance().getTotalPoint(userId);
     
-    // 2. ★ [수정] 변수명을 wrongCount에서 wrongWords로 변경 (아래 HTML과 일치시킴)
+    // 2. 오답 단어 수
     int wrongWords = QuizDAO.getInstance().getIncorrectCount(userId);
     
     // 3. 내가 푼 전체 문제 수 조회
     int mySolveCount = QuizDAO.getInstance().getMySolveCount(userId);
     
     // 4. 그래프용 계산 (전체 풀이 - 현재 오답 수 = 정답 수 추산)
-    // ★ 변수명이 바뀌었으므로 계산식도 wrongWords를 사용
     int correctCount = mySolveCount - wrongWords;
-    if(correctCount < 0) correctCount = 0; 
+    if(correctCount < 0) correctCount = 0;
+
+    // ✅ 프로필 이미지 경로 계산 (헤더와 동일한 로직)
+    String profileVal = myUser.getJdi_profile();
+    String profileSrc = ctx + "/images/profile1.png";  // 기본값
+
+    if (profileVal != null && !profileVal.trim().isEmpty()) {
+        if (profileVal.startsWith("profile")) {
+            // 기본 이미지 (profile1.png 등)
+            profileSrc = ctx + "/images/" + profileVal;
+        } else {
+            // 업로드 경로 등 (예: upload/profile/xxx.png)
+            profileSrc = ctx + "/" + profileVal;
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -43,7 +57,8 @@
             </div>
             
             <div class="profile-img-box">
-                <img src="${pageContext.request.contextPath}/images/<%= myUser.getJdi_profile() %>" alt="프로필">
+                <!-- ✅ 여기서 profileSrc 사용 -->
+                <img src="<%= profileSrc %>" alt="프로필">
             </div>
             
             <h2 class="user-name"><%= myUser.getJdi_name() %></h2>
@@ -80,8 +95,8 @@
 
     <% if(mySolveCount > 0) { %>
     <script>
-        const ctx = document.getElementById('myChart');
-        new Chart(ctx, {
+        const ctxChart = document.getElementById('myChart');
+        new Chart(ctxChart, {
             type: 'doughnut',
             data: {
                 labels: ['정답(누적)', '현재 오답'],
