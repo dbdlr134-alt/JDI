@@ -91,6 +91,14 @@ public class WordQuizService implements Action {
             PointDAO.getInstance().addPoint(userId, earnedPoints, "퀴즈 정답 보상");
         }
 
+        // ★ [추가] 푼 문제 개수(정답+오답)만큼 카운트 증가
+        if (userId != null) {
+            int totalAttempt = correctCount + wrongCount; // 이번에 푼 총 개수
+            QuizDAO.getInstance().updateSolveCount(userId, totalAttempt);
+        }
+
+        request.setAttribute("score", totalScore);
+
         request.setAttribute("score", totalScore);
         request.setAttribute("correctCount", correctCount);
         request.setAttribute("wrongCount", wrongCount);

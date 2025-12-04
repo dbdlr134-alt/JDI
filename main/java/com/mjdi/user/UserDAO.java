@@ -256,4 +256,21 @@ public class UserDAO {
             System.out.println("TO: " + userPhone + " / MSG: " + msgText);
         }
     }
+ // 9. [신규] 프로필 사진만 업데이트
+    public int updateProfile(String id, String profile) {
+        int result = 0;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        String sql = "UPDATE jdi_login SET jdi_profile=? WHERE jdi_user=?";
+        
+        try {
+            conn = DBM.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, profile);
+            pstmt.setString(2, id);
+            result = pstmt.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { DBM.close(conn, pstmt); }
+        return result;
+    }
 }

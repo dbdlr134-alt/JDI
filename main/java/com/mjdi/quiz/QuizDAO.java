@@ -363,4 +363,42 @@ public class QuizDAO {
             e.printStackTrace();
         }
     }
+    
+ // 8. [신규] 문제 풀이 횟수 증가 (퀴즈 제출 시 호출)
+    public void updateSolveCount(String userId, int count) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        // 기존 횟수에 방금 푼 문제 수(count)만큼 더함
+        String sql = "UPDATE jdi_login SET jdi_solve_count = jdi_solve_count + ? WHERE jdi_user = ?";
+        
+        try {
+            conn = DBM.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, count);
+            pstmt.setString(2, userId);
+            pstmt.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { DBM.close(conn, pstmt); }
+    }
+
+    // 9. [신규] 나의 총 풀이 횟수 조회 (마이페이지용)
+    public int getMySolveCount(String userId) {
+        int count = 0;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        String sql = "SELECT jdi_solve_count FROM jdi_login WHERE jdi_user = ?";
+        
+        try {
+            conn = DBM.getConnection();
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, userId);
+            rs = pstmt.executeQuery();
+            if(rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { DBM.close(conn, pstmt, rs); }
+        return count;
+    }
 }

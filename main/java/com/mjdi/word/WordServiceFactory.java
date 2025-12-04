@@ -22,6 +22,8 @@ public class WordServiceFactory {
             action = new WordAutoCompleteService();
         } else if (cmd.equals("word_req")) {
             action = new WordReqService();
+        } else if (cmd.equals("use_point")) {
+            action = new PointUseService();
         }
         
         return action;

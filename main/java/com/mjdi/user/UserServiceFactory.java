@@ -30,6 +30,8 @@ public class UserServiceFactory {
             action = new UserFindIdService();
         } else if (cmd.equals("/findPw.do")) {
             action = new UserFindPwService();
+        }else if (cmd.equals("/request_profile.do")) {
+            action = new ProfileRequestService();
         }
 
         return action;

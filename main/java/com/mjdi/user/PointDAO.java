@@ -56,4 +56,13 @@ public class PointDAO {
         finally { DBM.close(conn, pstmt, rs); }
         return total;
     }
+
+ // 3. [신규] 포인트가 충분한지 확인
+ public boolean checkPointSufficient(String userId, int requiredAmount) {
+     // getTotalPoint는 SUM(amount)를 반환합니다.
+     int currentPoint = getTotalPoint(userId);
+     
+     // 현재 포인트가 요구량보다 크거나 같으면 true 반환
+     return currentPoint >= requiredAmount;
+ }
 }
