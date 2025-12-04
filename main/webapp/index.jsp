@@ -24,7 +24,7 @@
         <div class="inner">
             <div class="title-area">
                 <h1>일본어사전</h1>
-                <p class="sub-title">MNU와 함께하는 스마트한 단어 학습</p>
+                <p class="sub-title">MNU와 함께하는 스마트한 일본어 단어 학습</p>
             </div>
             
             <div class="search-box">

@@ -18,6 +18,7 @@
         <div class="table-section">
             <div class="section-title">
                 <span>🛠️ 단어 수정 요청 대기열</span>
+                <a href="${pageContext.request.contextPath}/adminMain.apply" class="btn-home">관리자 홈</a>
             </div>
 
             <table class="req-table">

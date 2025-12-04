@@ -63,7 +63,7 @@
         <div class="view-korean"><%= word.getKorean() %></div>
         
         <div>
-            <a href="${pageContext.request.contextPath}/request/requesr_word.jsp?word_id=<%= word.getWord_id() %>"
+            <a href="${pageContext.request.contextPath}/request/requesr_edit.jsp?word_id=<%= word.getWord_id() %>"
                class="btn-edit-req">
                 🛠️ 정보 수정 요청하기
             </a>

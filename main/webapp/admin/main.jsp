@@ -38,7 +38,7 @@
             </div>
             <div class="stat-card">
                 <h3>신규 신청 대기</h3>
-                <strong style="color:#e53935;">${newRequest}</strong>
+                <strong style="color:#e53935;">${totalRequest}</strong>
             </div>
             <div class="stat-card">
                 <h3>총 등록 단어</h3>

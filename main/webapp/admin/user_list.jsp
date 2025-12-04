@@ -18,7 +18,7 @@
         <div class="table-section">
             <div class="section-title">
                 <span>👥 전체 회원 목록 조회</span>
-                <a href="${pageContext.request.contextPath}/admin/main.jsp" class="btn-home">관리자 홈</a>
+                <a href="${pageContext.request.contextPath}/adminMain.apply" class="btn-home">관리자 홈</a>
             </div>
 
             <table class="req-table user-table">
@@ -42,10 +42,12 @@
                                     <td>${user.jdi_email}</td>
                                     <td>${user.jdi_phone}</td>
                                     <td>${user.jdi_role}</td>
-                                    <td>
-                                        <button class="btn-no" onclick="alert('차단 예정')">차단</button>
-                                    </td>
-                                </tr>
+								    <td>
+								        <!-- 자바스크립트로 전송 팝업 호출 -->
+								        <button class="btn-ok" onclick="sendWarning('${user.jdi_user}')" style="background:#ff9800;">경고</button>
+								        <button class="btn-no" onclick="alert('차단 예정')">차단</button>
+								    </td>
+								</tr>
                             </c:forEach>
                         </c:when>
                         <c:otherwise>
@@ -60,4 +62,14 @@
     </div>
 
 </body>
+<script>
+function sendWarning(userId) {
+    // 간단하게 prompt로 입력받기
+    const msg = prompt(userId + "님에게 보낼 경고/알림 내용을 입력하세요:");
+    if(msg) {
+        // 전송 서비스 호출
+        location.href = "${pageContext.request.contextPath}/msgSend.do?receiver=" + userId + "&content=" + encodeURIComponent(msg);
+    }
+}
+</script>
 </html>

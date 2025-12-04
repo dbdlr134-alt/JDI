@@ -2,12 +2,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="com.mjdi.user.UserDTO" %>
 <%@ page import="com.mjdi.user.PointDAO" %>
+<%@ page import="com.mjdi.user.MessageDAO" %>
 
 <%
     UserDTO headerUser = (UserDTO)session.getAttribute("sessionUser");
     String ctx = request.getContextPath(); // 절대 경로용 변수
 
     int headerPoint = 0;
+    int unreadMsg = 0;
     String headerProfile = "profile1.png";   // 기본 프로필 파일명
     String profileSrc = ctx + "/images/" + headerProfile; // 실제 img src
 
@@ -16,6 +18,7 @@
 
         if (headerUser.getJdi_profile() != null && !headerUser.getJdi_profile().trim().isEmpty()) {
             headerProfile = headerUser.getJdi_profile();
+            unreadMsg = MessageDAO.getInstance().getUnreadCount(headerUser.getJdi_user());
         }
 
         // ✅ 프로필 경로 판별
@@ -42,6 +45,12 @@
                     <img src="<%= profileSrc %>" style="width:32px; height:32px; border-radius:50%;" alt="프사">
                     <span><%= headerUser.getJdi_name() %>님</span>
                 </div>
+                <a href="<%= ctx %>/msgBox.do" class="alarm-bell <%= unreadMsg > 0 ? "active" : "" %>" title="알림">
+                        🔔
+                        <% if(unreadMsg > 0) { %>
+                            <span class="dot"></span> <!-- 빨간 점 포인트 -->
+                        <% } %>
+                    </a>
             <% } else { %>
                 <a href="<%= ctx %>/login.jsp" class="login-link">로그인</a>
             <% } %>

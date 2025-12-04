@@ -31,6 +31,7 @@
         <div class="table-section">
             <div class="section-title">
                 <span>📢 신규 단어 등록 대기열</span>
+                <a href="${pageContext.request.contextPath}/adminMain.apply" class="btn-home">관리자 홈</a>
             </div>
 
             <!-- ✅ 테이블 클래스 이름을 req-table 로 변경 -->

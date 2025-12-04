@@ -15,6 +15,7 @@
         <div class="table-section">
             <div class="section-title">
                 <span>👤 프로필 변경 신청 대기열</span>
+                <a href="${pageContext.request.contextPath}/adminMain.apply" class="btn-home">관리자 홈</a>
             </div>
 
             <table class="req-table">
