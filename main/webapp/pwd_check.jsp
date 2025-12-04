@@ -12,7 +12,13 @@
             border-radius: 20px; box-shadow: 0 10px 30px rgba(158,173,255,0.2);
         }
         .input-pw { width: 100%; height: 50px; border: 2px solid #ddd; border-radius: 10px; padding: 0 15px; margin: 20px 0; font-size: 16px; }
-        .btn-check { width: 100%; height: 50px; background: var(--main-color); color: #fff; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-check {width: 100%;
+            padding: 15px; 
+            /* ★ [수정] var(--main-color) 대신 고정된 파란색 계열 색상 적용 */
+            background: #0C4DA1; 
+            color: #fff; 
+            border: none; border-radius: 30px; 
+            font-size: 16px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
