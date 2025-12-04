@@ -21,10 +21,13 @@ public class AdminMainService implements Action {
         int totalUser = userDao.getUserCount();
         int newRequest = applyDao.getNewWaitCount(); // 신규 등록 대기
         int totalWord = wordDao.getTotalWordCount();
+        int editRequest = applyDao.getEditWaitCount();
+        int profileRequest = applyDao.getProfileWaitCount();
+        int totalRequest = newRequest + editRequest + profileRequest;
         
         // 3. Request 객체에 저장
         request.setAttribute("totalUser", totalUser);
-        request.setAttribute("newRequest", newRequest);
+        request.setAttribute("totalRequest", totalRequest);
         request.setAttribute("totalWord", totalWord);
         
         // 4. Admin Dashboard JSP로 포워딩

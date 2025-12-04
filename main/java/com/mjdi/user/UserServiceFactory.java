@@ -40,6 +40,10 @@ public class UserServiceFactory {
             action = new ProfileReqRejectService();
         }else if (cmd.equals("/userList.do")) {
             action = new UserListService();
+        }else if (cmd.equals("/msgSend.do")) {
+            action = new MessageSendService();
+        } else if (cmd.equals("/msgBox.do")) {
+            action = new MessageBoxService();
         }
 
 

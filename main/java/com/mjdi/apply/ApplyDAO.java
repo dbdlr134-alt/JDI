@@ -267,4 +267,20 @@ public class ApplyDAO {
         } catch (Exception e) { e.printStackTrace(); }
         return count;
     }
+    
+ // 5. [신규] 프로필 신청 대기 건수 조회
+    public int getProfileWaitCount() {
+        int count = 0;
+        // jdi_word_edit_request 테이블에서 조회
+        String sql = "SELECT COUNT(*) FROM profile_request WHERE status = 'PENDING'";
+        
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return count;
+    }
 }
