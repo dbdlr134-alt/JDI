@@ -9,6 +9,8 @@
     <style>
         .user-table th, .user-table td { text-align: center; }
         .user-table td { font-size: 13px; padding: 10px 5px; }
+        .badge-block { color: red; font-weight: bold; }
+        .badge-active { color: green; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -24,12 +26,12 @@
             <table class="req-table user-table">
                 <thead>
                     <tr>
-                        <th style="width:15%;">아이디</th>
-                        <th style="width:15%;">이름</th>
+                        <th style="width:10%;">아이디</th>
+                        <th style="width:10%;">이름</th>
                         <th style="width:20%;">이메일</th>
                         <th style="width:15%;">전화번호</th>
-                        <th style="width:10%;">권한</th>
-                        <th style="width:15%;">관리</th>
+                        <th style="width:10%;">상태</th>
+                        <th style="width:25%;">관리</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,13 +43,39 @@
                                     <td>${user.jdi_name}</td>
                                     <td>${user.jdi_email}</td>
                                     <td>${user.jdi_phone}</td>
-                                    <td>${user.jdi_role}</td>
-								    <td>
-								        <!-- 자바스크립트로 전송 팝업 호출 -->
-								        <button class="btn-ok" onclick="sendWarning('${user.jdi_user}')" style="background:#ff9800;">경고</button>
-								        <button class="btn-no" onclick="alert('차단 예정')">차단</button>
-								    </td>
-								</tr>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${user.jdi_status eq 'BLOCK'}">
+                                                <span class="badge-block">차단됨</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="badge-active">활동중</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <!-- 메세지 전송 -->
+                                        <button class="btn-ok" onclick="sendWarning('${user.jdi_user}')" style="background:#ff9800; margin-right:5px;">경고</button>
+                                        
+                                        <!-- 차단/해제 토글 -->
+                                        <c:choose>
+                                            <%-- 관리자 본인은 차단 불가 --%>
+                                            <c:when test="${user.jdi_role eq 'ADMIN'}">
+                                                <span style="color:#999; font-size:12px;">(관리자)</span>
+                                            </c:when>
+                                            
+                                            <%-- 차단 상태면 -> 해제 버튼 --%>
+                                            <c:when test="${user.jdi_status eq 'BLOCK'}">
+                                                <button class="btn-ok" onclick="if(confirm('차단을 해제하시겠습니까?')) location.href='${pageContext.request.contextPath}/userBlock.do?id=${user.jdi_user}&action=active'">해제</button>
+                                            </c:when>
+                                            
+                                            <%-- 활동 상태면 -> 차단 버튼 --%>
+                                            <c:otherwise>
+                                                <button class="btn-no" onclick="if(confirm('정말 차단하시겠습니까?')) location.href='${pageContext.request.contextPath}/userBlock.do?id=${user.jdi_user}&action=block'">차단</button>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                </tr>
                             </c:forEach>
                         </c:when>
                         <c:otherwise>
@@ -61,15 +89,13 @@
         </div>
     </div>
 
-</body>
 <script>
 function sendWarning(userId) {
-    // 간단하게 prompt로 입력받기
     const msg = prompt(userId + "님에게 보낼 경고/알림 내용을 입력하세요:");
     if(msg) {
-        // 전송 서비스 호출
         location.href = "${pageContext.request.contextPath}/msgSend.do?receiver=" + userId + "&content=" + encodeURIComponent(msg);
     }
 }
 </script>
+</body>
 </html>
