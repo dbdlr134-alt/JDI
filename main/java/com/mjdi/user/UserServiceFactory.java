@@ -44,6 +44,8 @@ public class UserServiceFactory {
             action = new MessageSendService();
         } else if (cmd.equals("/msgBox.do")) {
             action = new MessageBoxService();
+        }else if (cmd.equals("/userBlock.do")) {
+            action = new UserBlockService();
         }
 
 
