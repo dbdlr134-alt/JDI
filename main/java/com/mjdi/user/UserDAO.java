@@ -42,34 +42,34 @@ public class UserDAO {
         return result;
     }
 
-    // 2. 로그인 (★ jdi_status 추가 조회)
+    // 2. 로그인 (★수정됨: 테마 정보 가져오기)
     public UserDTO loginCheck(String id, String pw) {
         UserDTO user = null;
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
         String sql = "SELECT * FROM jdi_login WHERE jdi_user = ? AND jdi_pass = ?";
-        try {
-            conn = DBM.getConnection();
-            pstmt = conn.prepareStatement(sql);
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, id);
             pstmt.setString(2, SHA256.encodeSha256(pw));
-            rs = pstmt.executeQuery();
-            if(rs.next()) {
-                user = new UserDTO();
-                user.setJdi_user(rs.getString("jdi_user"));
-                user.setJdi_name(rs.getString("jdi_name"));
-                user.setJdi_email(rs.getString("jdi_email"));
-                user.setJdi_phone(rs.getString("jdi_phone"));
-                user.setJdi_profile(rs.getString("jdi_profile"));
-                user.setJdi_role(rs.getString("jdi_role"));
-                
-                // ★ [추가] 상태값 가져오기 (없으면 기본값 ACTIVE)
-                String status = rs.getString("jdi_status");
-                user.setJdi_status(status == null ? "ACTIVE" : status);
+            try(ResultSet rs = pstmt.executeQuery()) {
+                if(rs.next()) {
+                    user = new UserDTO();
+                    user.setJdi_user(rs.getString("jdi_user"));
+                    user.setJdi_name(rs.getString("jdi_name"));
+                    user.setJdi_email(rs.getString("jdi_email"));
+                    user.setJdi_phone(rs.getString("jdi_phone"));
+                    user.setJdi_profile(rs.getString("jdi_profile"));
+                    user.setJdi_role(rs.getString("jdi_role"));
+                    
+                    // 상태 (없으면 ACTIVE)
+                    String status = rs.getString("jdi_status");
+                    user.setJdi_status(status == null ? "ACTIVE" : status);
+                    
+                    // ★ [핵심 수정] 테마 정보 가져오기 (없으면 default)
+                    String theme = rs.getString("jdi_theme");
+                    user.setJdi_theme(theme == null ? "default" : theme);
+                }
             }
         } catch (Exception e) { e.printStackTrace(); } 
-        finally { DBM.close(conn, pstmt, rs); }
         return user;
     }
 
@@ -224,5 +224,71 @@ public class UserDAO {
             result = pstmt.executeUpdate();
         } catch (Exception e) { e.printStackTrace(); }
         return result;
+    }
+
+    // 13. 보유 테마 목록 조회 (기존 코드 유지)
+    public ArrayList<String> getMyThemes(String userId) {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("default"); // 기본 테마는 항상 포함
+        
+        String sql = "SELECT theme_code FROM jdi_user_theme WHERE jdi_user = ?";
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            try(ResultSet rs = pstmt.executeQuery()) {
+                while(rs.next()) {
+                    list.add(rs.getString("theme_code"));
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
+    }
+
+    // 14. 테마 구매 (기존 코드 유지)
+    public int buyTheme(String userId, String themeCode) {
+        int result = 0;
+        String sql = "INSERT INTO jdi_user_theme (jdi_user, theme_code) VALUES (?, ?)";
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setString(2, themeCode);
+            result = pstmt.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+        return result;
+    }
+
+    // 15. 테마 적용 (기존 코드 유지)
+    public int updateTheme(String userId, String themeCode) {
+        int result = 0;
+        String sql = "UPDATE jdi_login SET jdi_theme = ? WHERE jdi_user = ?";
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, themeCode);
+            pstmt.setString(2, userId);
+            result = pstmt.executeUpdate();
+        } catch (Exception e) { e.printStackTrace(); }
+        return result;
+    }
+
+    // 16. ★ [신규] 상점 진열용 전체 테마 목록 조회
+    public ArrayList<ThemeDTO> getAllThemes() {
+        ArrayList<ThemeDTO> list = new ArrayList<>();
+        // 판매 중인(Y) 테마만 가져오기
+        String sql = "SELECT * FROM jdi_theme_info WHERE is_active = 'Y' ORDER BY price ASC";
+        
+        try (Connection conn = DBM.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            
+            while(rs.next()) {
+                ThemeDTO dto = new ThemeDTO();
+                dto.setThemeCode(rs.getString("theme_code"));
+                dto.setThemeName(rs.getString("theme_name"));
+                dto.setPrice(rs.getInt("price"));
+                dto.setDescription(rs.getString("description"));
+                list.add(dto);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return list;
     }
 }

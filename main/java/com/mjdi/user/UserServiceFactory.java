@@ -46,6 +46,10 @@ public class UserServiceFactory {
             action = new MessageBoxService();
         }else if (cmd.equals("/userBlock.do")) {
             action = new UserBlockService();
+        }else if (cmd.equals("/themeBuy.do")) {
+            action = new ThemeBuyService();
+        }else if (cmd.equals("/themeApply.do")) {
+            action = new ThemeApplyService();
         }
 
 
