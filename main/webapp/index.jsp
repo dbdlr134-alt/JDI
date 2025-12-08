@@ -1,9 +1,26 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"
+    import="com.mjdi.user.UserDTO, com.mjdi.quiz.QuizDAO" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page import="com.mjdi.quiz.QuizDAO" %>
 
 <%
-    // 오늘의 퀴즈 세팅
+    // 1. 세션에서 유저 정보 가져오기
+    UserDTO myUser = (UserDTO)session.getAttribute("sessionUser");
+
+    // 2. 현재 테마 결정
+    String currentTheme = "default";
+    if (myUser != null && myUser.getJdi_theme() != null && !myUser.getJdi_theme().trim().isEmpty()) {
+        currentTheme = myUser.getJdi_theme();
+    }
+
+    // 3. 공통 스타일 + 테마 스타일 경로
+    String baseCss = request.getContextPath() + "/style/style.css";  // 공통 레이아웃
+    String themeCss = null;                                         // 테마(있을 때만)
+
+    if (!"default".equals(currentTheme)) {
+        themeCss = request.getContextPath() + "/style/" + currentTheme + "/style.css";
+    }
+
+    // 4. 오늘의 퀴즈 세팅
     QuizDAO.getInstance().checkAndSetGlobalQuiz(application);
 %>
 
@@ -13,9 +30,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MNU 일본어 사전</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/style/style.css">
+
+    <!-- ✅ 1) 항상 공통 style.css 로드 (레이아웃/구조) -->
+    <link rel="stylesheet" href="<%= baseCss %>">
+
+    <!-- ✅ 2) 테마가 default가 아닐 때만, 덮어쓰기용 테마 CSS 추가 -->
+    <% if (themeCss != null) { %>
+        <link rel="stylesheet" href="<%= themeCss %>">
+    <% } %>
+
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
     <jsp:include page="/include/header.jsp" />
@@ -73,7 +99,9 @@
                         <p style="margin-bottom:15px; font-size:18px;">검색 결과가 없습니다.</p>
                         <a href="WordController?cmd=main" class="btn-action peri">메인으로 돌아가기</a>
                         <br><br>
-                        <a href="request_word.jsp" style="color:#00A295; font-weight:bold; text-decoration:underline;">+ 없는 단어 등록 신청하기</a>
+                        <a href="request_word.jsp" style="color:#00A295; font-weight:bold; text-decoration:underline;">
+                            + 없는 단어 등록 신청하기
+                        </a>
                     </div>
                 </c:when>
 
@@ -123,7 +151,7 @@
     </section>
 
    <script>
-   // 자동완성 스크립트 (디자인 수정됨)
+   // 자동완성 스크립트
    const searchInput = document.getElementById("searchInput");
    const autoBox = document.getElementById("autoBox");
 
@@ -142,7 +170,6 @@
                if (!data || data.length === 0) {
                    autoBox.style.display = "none";
                } else {
-                   // 자동완성 박스 스타일
                    autoBox.style.cssText = `
                        display: block !important;
                        position: absolute !important;
@@ -162,7 +189,6 @@
                        const korean = item.korean;
                        const div = document.createElement("div");
                        
-                       // 아이템 스타일
                        div.style.cssText = `
                            padding: 12px 20px;
                            border-bottom: 1px solid #f5f5f5;
@@ -173,17 +199,23 @@
                            text-align: left;
                        `;
                        
-                       // 매칭되는 글자 강조 (옵션)
-                       div.innerHTML = "<span style='font-weight:bold; color:#0C4DA1;'>" + word + "</span> <span style='color:#888; font-size:13px; margin-left:8px;'>" + korean + "</span>";
+                       div.innerHTML =
+                           "<span style='font-weight:bold; color:#0C4DA1;'>" + word + "</span>" +
+                           "<span style='color:#888; font-size:13px; margin-left:8px;'>" + korean + "</span>";
 
                        div.addEventListener("click", () => {
                            searchInput.value = word;
                            autoBox.style.display = "none";
                        });
                        
-                       // 마우스 오버 시 MNU Green 배경
-                       div.onmouseover = function() { this.style.backgroundColor = "#e0f2f1"; this.style.color = "#00A295"; };
-                       div.onmouseout = function() { this.style.backgroundColor = "#fff"; this.style.color = "#333"; };
+                       div.onmouseover = function() {
+                           this.style.backgroundColor = "#e0f2f1";
+                           this.style.color = "#00A295";
+                       };
+                       div.onmouseout = function() {
+                           this.style.backgroundColor = "#fff";
+                           this.style.color = "#333";
+                       };
 
                        autoBox.appendChild(div);
                    });
