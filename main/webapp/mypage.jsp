@@ -69,8 +69,12 @@
 		    	🎨 테마 상점 가기
 			</a>
 
-            <a href="${pageContext.request.contextPath}/request/requesr_edit.jsp" class="btn-mypage btn-outline-green">
-                + 단어 등록 신청
+            <a href="${pageContext.request.contextPath}/request/requesr_word.jsp" class="btn-mypage btn-outline-green">
+                ➕ 단어 등록 신청
+            </a>
+            
+            <a href="${pageContext.request.contextPath}/QnAController?cmd=qna_list" class="btn-mypage btn-outline-green">
+                ❓ QnA
             </a>
         </div>
 

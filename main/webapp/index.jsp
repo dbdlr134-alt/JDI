@@ -31,10 +31,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MNU 일본어 사전</title>
 
-    <!-- ✅ 1) 항상 공통 style.css 로드 (레이아웃/구조) -->
     <link rel="stylesheet" href="<%= baseCss %>">
 
-    <!-- ✅ 2) 테마가 default가 아닐 때만, 덮어쓰기용 테마 CSS 추가 -->
     <% if (themeCss != null) { %>
         <link rel="stylesheet" href="<%= themeCss %>">
     <% } %>
@@ -107,9 +105,29 @@
 
                 <%-- [CASE C] 메인 대시보드 --%>
                 <c:otherwise>
-                    <div class="card-container">
+                    <div class="card-container" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
                         
-                        <article class="card quiz-card">
+                        <article class="card notice-card" 
+                                 style="width: 100%; display: flex; align-items: center; padding: 20px 25px; cursor: pointer;"
+                                 onclick="location.href='${pageContext.request.contextPath}/NoticeController?cmd=notice_list'">
+                            
+                            <div style="font-size: 32px; margin-right: 20px;">
+                                📢
+                            </div>
+                            
+                            <div style="flex-grow: 1;">
+                                <h3 style="margin: 0; font-size: 18px; color: #333;">NOTICE</h3>
+                                <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+                                    새로운 공지사항을 확인해보세요.
+                                </p>
+                            </div>
+                            
+                            <div>
+                                <span class="btn-action peri" style="padding: 8px 16px; font-size: 13px;">보기 &gt;</span>
+                            </div>
+                        </article>
+
+                        <article class="card quiz-card" style="flex: 1; min-width: 300px;">
                             <div class="card-header">TODAY'S QUIZ</div>
                             <div class="card-body">
                                 <c:choose>
@@ -127,7 +145,7 @@
                             </div>
                         </article>
 
-                        <article class="card jlpt-card">
+                        <article class="card jlpt-card" style="flex: 1; min-width: 300px;">
                             <div class="card-header">JLPT VOCABULARY</div>
                             <div class="card-body">
                                 <div style="margin-bottom:20px; display:flex; flex-wrap:wrap; justify-content:center; gap:5px;">
@@ -151,84 +169,85 @@
     </section>
 
    <script>
-   // 자동완성 스크립트
    const searchInput = document.getElementById("searchInput");
    const autoBox = document.getElementById("autoBox");
 
-   searchInput.addEventListener("keyup", function() {
-       const key = this.value.trim();
-       if (key.length === 0) {
-           autoBox.innerHTML = "";
-           autoBox.style.display = "none";
-           return;
-       }
-
-       fetch("WordController?cmd=auto_complete&key=" + encodeURIComponent(key))
-           .then(res => res.json())
-           .then(data => {
+   if(searchInput) {
+       searchInput.addEventListener("keyup", function() {
+           const key = this.value.trim();
+           if (key.length === 0) {
                autoBox.innerHTML = "";
-               if (!data || data.length === 0) {
-                   autoBox.style.display = "none";
-               } else {
-                   autoBox.style.cssText = `
-                       display: block !important;
-                       position: absolute !important;
-                       top: 65px !important;
-                       left: 0 !important;
-                       width: 100% !important;
-                       background-color: white !important;
-                       border: 1px solid #ddd !important;
-                       border-radius: 0 0 15px 15px;
-                       box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                       z-index: 99999 !important;
-                       overflow: hidden;
-                   `;
+               autoBox.style.display = "none";
+               return;
+           }
 
-                   data.forEach(item => {
-                       const word = item.word; 
-                       const korean = item.korean;
-                       const div = document.createElement("div");
-                       
-                       div.style.cssText = `
-                           padding: 12px 20px;
-                           border-bottom: 1px solid #f5f5f5;
-                           cursor: pointer;
-                           color: #333;
-                           font-size: 15px;
-                           background: white;
-                           text-align: left;
+           fetch("WordController?cmd=auto_complete&key=" + encodeURIComponent(key))
+               .then(res => res.json())
+               .then(data => {
+                   autoBox.innerHTML = "";
+                   if (!data || data.length === 0) {
+                       autoBox.style.display = "none";
+                   } else {
+                       autoBox.style.cssText = `
+                           display: block !important;
+                           position: absolute !important;
+                           top: 65px !important;
+                           left: 0 !important;
+                           width: 100% !important;
+                           background-color: white !important;
+                           border: 1px solid #ddd !important;
+                           border-radius: 0 0 15px 15px;
+                           box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                           z-index: 99999 !important;
+                           overflow: hidden;
                        `;
-                       
-                       div.innerHTML =
-                           "<span style='font-weight:bold; color:#0C4DA1;'>" + word + "</span>" +
-                           "<span style='color:#888; font-size:13px; margin-left:8px;'>" + korean + "</span>";
 
-                       div.addEventListener("click", () => {
-                           searchInput.value = word;
-                           autoBox.style.display = "none";
+                       data.forEach(item => {
+                           const word = item.word; 
+                           const korean = item.korean;
+                           const div = document.createElement("div");
+                           
+                           div.style.cssText = `
+                               padding: 12px 20px;
+                               border-bottom: 1px solid #f5f5f5;
+                               cursor: pointer;
+                               color: #333;
+                               font-size: 15px;
+                               background: white;
+                               text-align: left;
+                           `;
+                           
+                           div.innerHTML =
+                               "<span style='font-weight:bold; color:#0C4DA1;'>" + word + "</span>" +
+                               "<span style='color:#888; font-size:13px; margin-left:8px;'>" + korean + "</span>";
+
+                           div.addEventListener("click", () => {
+                               searchInput.value = word;
+                               autoBox.style.display = "none";
+                           });
+                           
+                           div.onmouseover = function() {
+                               this.style.backgroundColor = "#e0f2f1";
+                               this.style.color = "#00A295";
+                           };
+                           div.onmouseout = function() {
+                               this.style.backgroundColor = "#fff";
+                               this.style.color = "#333";
+                           };
+
+                           autoBox.appendChild(div);
                        });
-                       
-                       div.onmouseover = function() {
-                           this.style.backgroundColor = "#e0f2f1";
-                           this.style.color = "#00A295";
-                       };
-                       div.onmouseout = function() {
-                           this.style.backgroundColor = "#fff";
-                           this.style.color = "#333";
-                       };
-
-                       autoBox.appendChild(div);
-                   });
-               }
-           })
-           .catch(err => console.error("에러:", err));
-   });
-   
-   document.addEventListener("click", function(e) {
-       if (e.target !== searchInput && e.target !== autoBox) {
-           autoBox.style.display = "none";
-       }
-   });
+                   }
+               })
+               .catch(err => console.error("에러:", err));
+       });
+       
+       document.addEventListener("click", function(e) {
+           if (e.target !== searchInput && e.target !== autoBox) {
+               if(autoBox) autoBox.style.display = "none";
+           }
+       });
+   }
    </script>
 </body>
 </html>
