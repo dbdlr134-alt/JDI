@@ -1,9 +1,0 @@
--- 공지사항 테이블
-CREATE TABLE jdi_notice (
-    idx INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-ALTER TABLE jdi_notice ADD COLUMN is_top TINYINT DEFAULT 0;
