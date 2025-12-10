@@ -291,7 +291,7 @@ public class ApplyDAO {
     public int updateStatusWithConn(Connection conn, int reqId, String status) {
         int result = 0;
         PreparedStatement pstmt = null;
-        String sql = "UPDATE word_apply SET status = ? WHERE req_id = ?";
+        String sql = "UPDATE jdi_word_req SET status = ? WHERE req_id = ?";
 
         try {
             pstmt = conn.prepareStatement(sql);

@@ -23,13 +23,13 @@ public class DBM {
 	}
 	
 	public static void close(Connection conn, PreparedStatement pstmt, ResultSet rs) {
-		try {
-			rs.close();
-			pstmt.close();
-			conn.close();
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
+	    try {
+	        if (rs != null) rs.close();       // null 체크 추가
+	        if (pstmt != null) pstmt.close(); // null 체크 추가
+	        if (conn != null) conn.close();   // null 체크 추가
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 		
 	}
 	

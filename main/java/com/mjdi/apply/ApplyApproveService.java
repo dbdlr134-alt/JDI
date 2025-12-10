@@ -19,11 +19,23 @@ public class ApplyApproveService implements Action {
     @Override
     public void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         
-        // 0. [보안] 관리자 권한 체크 (선택 사항이나 권장됨)
+    	// 0. [보안 및 디버깅] 관리자 권한 체크
         HttpSession session = request.getSession();
         UserDTO sessionUser = (UserDTO) session.getAttribute("sessionUser");
-        // 관리자가 아니면 튕겨내는 로직 (필요시 주석 해제하여 사용)
-        if (sessionUser == null || !"admin".equals(sessionUser.getJdi_user())) {
+        
+        // [디버깅 로그] 현재 누가 요청했는지 서버 콘솔에 출력
+        if (sessionUser == null) {
+            System.out.println("⚠️ [ApplyApproveService] 접근 차단: 로그인 세션이 없습니다. (서버 재시작됨?)");
+            response.sendRedirect("login.jsp");
+            return;
+        } else {
+            System.out.println("✅ [ApplyApproveService] 접근 요청자: " + sessionUser.getJdi_user() + " / 권한: " + sessionUser.getJdi_role());
+        }
+
+        // [핵심 수정] 아이디가 'admin'인지 확인하는 대신, 권한(Role)이 'ADMIN'인지 확인합니다.
+        // DB에 jdi_role이 'ADMIN'으로 저장되어 있어야 합니다.
+        if (!"ADMIN".equals(sessionUser.getJdi_role())) {
+             System.out.println("⚠️ [ApplyApproveService] 접근 차단: 관리자 권한(ADMIN)이 아닙니다.");
              response.sendRedirect("login.jsp");
              return;
         }
