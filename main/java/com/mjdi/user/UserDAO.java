@@ -320,21 +320,20 @@ public class UserDAO {
     
     public int buyThemeWithConn(Connection conn, String userId, String themeCode) {
         int result = 0;
-        String sql = "INSERT INTO jdi_my_theme (jdi_user, theme_code) VALUES (?, ?)";
         
-        // try-with-resources 사용 (pstmt만 닫음)
+        // [수정] 쿼리문에 맞춰 테이블명을 'jdi_user_theme'로 변경했습니다.
+        String sql = "INSERT INTO jdi_user_theme (jdi_user, theme_code) VALUES (?, ?)";
+        
         try (java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             pstmt.setString(2, themeCode);
             result = pstmt.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
-            // 서비스(Service)에서 롤백할 수 있도록 예외를 던지거나, 
-            // 0을 리턴하여 실패를 알림 (여기서는 0 리턴 방식 사용)
+            // 중복 구매 등 에러 발생 시 0 반환
         }
         return result;
     }
-    
     public int updateAllWithConn(Connection conn, String id, String name, String phone, String email, String newPw, String profile) {
         int result = 0;
         java.sql.PreparedStatement pstmt = null;

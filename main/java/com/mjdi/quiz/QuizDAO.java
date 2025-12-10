@@ -21,11 +21,16 @@ public class QuizDAO {
     private static QuizDAO instance = new QuizDAO();
     public static QuizDAO getInstance() { return instance; }
     
- // 1. [트랜잭션용] 오답노트 추가 (중복 방지 로직 포함 권장)
+ // 1. [트랜잭션용] 오답노트 추가 (없으면 INSERT, 있으면 횟수 증가)
     public void addIncorrectNoteWithConn(Connection conn, String userId, int quizId) {
-        // 이미 있는지 확인하는 로직이 있으면 좋지만, 여기서는 INSERT IGNORE나 MERGE 등을 가정하거나 단순 INSERT
-        // 중복 에러가 날 수 있으니 try-catch로 감싸서 무시하거나, MERGE INTO 구문 사용 권장
-        String sql = "INSERT INTO jdi_incorrect_note (jdi_user, quiz_id) VALUES (?, ?)"; 
+        
+        // ★ 핵심: 이미 존재하면(DUPLICATE KEY) 날짜를 갱신하고 카운트를 1 올림
+        String sql = "INSERT INTO incorrect_note (jdi_user, quiz_id, wrong_date, wrong_count) "
+                   + "VALUES (?, ?, NOW(), 1) "
+                   + "ON DUPLICATE KEY UPDATE "
+                   + "wrong_date = NOW(), "
+                   + "wrong_count = wrong_count + 1";
+
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
@@ -33,7 +38,9 @@ public class QuizDAO {
             pstmt.setInt(2, quizId);
             pstmt.executeUpdate();
         } catch (Exception e) {
-            // 이미 존재할 경우(PK 중복 등) 예외가 날 수 있음 -> 무시하고 진행
+            // 여기서 에러가 나면 콘솔에 출력 (트랜잭션 원인 파악용)
+            System.out.println("오답노트 저장 실패: " + e.getMessage());
+            e.printStackTrace();
         } finally {
             if(pstmt != null) try { pstmt.close(); } catch(Exception e) {}
         }
@@ -41,7 +48,9 @@ public class QuizDAO {
 
     // 2. [트랜잭션용] 오답노트 삭제 (복습 성공 시)
     public void removeIncorrectNoteWithConn(Connection conn, String userId, int quizId) {
-        String sql = "DELETE FROM jdi_incorrect_note WHERE jdi_user=? AND quiz_id=?";
+        // 테이블명을 incorrect_note 로 수정
+        String sql = "DELETE FROM incorrect_note WHERE jdi_user=? AND quiz_id=?";
+        
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
@@ -55,10 +64,11 @@ public class QuizDAO {
         }
     }
 
-    // 3. [트랜잭션용] 문제 풀이 횟수 증가
+    // 3. [트랜잭션용] 문제 풀이 횟수 증가 (jdi_login 테이블에 컬럼이 있다고 가정)
     public void updateSolveCountWithConn(Connection conn, String userId, int count) {
-        // 예: jdi_user_stats 테이블이 있다고 가정
-        String sql = "UPDATE jdi_user SET solve_count = solve_count + ? WHERE jdi_user = ?";
+        // ★ 테이블명: jdi_login, 컬럼명: solve_count (DB에 이 컬럼이 있어야 함)
+        String sql = "UPDATE jdi_login SET solve_count = solve_count + ? WHERE jdi_user = ?";
+        
         PreparedStatement pstmt = null;
         try {
             pstmt = conn.prepareStatement(sql);
@@ -66,6 +76,7 @@ public class QuizDAO {
             pstmt.setString(2, userId);
             pstmt.executeUpdate();
         } catch (Exception e) {
+            System.out.println("문제 풀이 횟수 업데이트 실패 (컬럼 확인 필요): " + e.getMessage());
             e.printStackTrace();
         } finally {
             if(pstmt != null) try { pstmt.close(); } catch(Exception e) {}
