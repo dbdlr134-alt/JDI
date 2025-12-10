@@ -3,7 +3,7 @@
 <%@ page import="com.mjdi.user.UserDTO" %>
 
 <%
-    // 1. 세션에서 유저 정보 가져오기 (없으면 테마는 default)
+    // 1. 세션에서 유저 정보 가져오기 & 테마 적용
     UserDTO myUser = (UserDTO)session.getAttribute("sessionUser");
 
     String cssPath = request.getContextPath() + "/style/style.css"; // 기본 테마
@@ -19,9 +19,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>퀴즈 풀기 - My J-Dic</title>
 
-    <!-- 레이아웃/퀴즈 전용 스타일 먼저 -->
     <link rel="stylesheet" href="${pageContext.request.contextPath}/style/quiz.css">
-    <!-- 마지막에 테마 CSS 적용 (현재 테마에 따라 경로 변경) -->
     <link rel="stylesheet" href="<%= cssPath %>">
 </head>
 <body>
@@ -32,11 +30,14 @@
         <div class="quiz-card">
             
             <div class="quiz-header-text">
-                [ ${empty jlpt ? '전체' : jlpt} ] 오늘의 단어 퀴즈
+                [ ${empty jlpt ? '전체' : jlpt} ] 
+                <c:choose>
+                    <c:when test="${not empty isDaily or param.isDaily == 'true'}">오늘의 퀴즈 도전!</c:when>
+                    <c:otherwise>단어 트레이닝</c:otherwise>
+                </c:choose>
             </div>
 
             <div class="level-menu">
-                <%-- ContextPath를 사용하여 경로 안전하게 지정 --%>
                 <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N1" class="btn-level ${jlpt == 'N1' ? 'active' : ''}">N1</a>
                 <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N2" class="btn-level ${jlpt == 'N2' ? 'active' : ''}">N2</a>
                 <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N3" class="btn-level ${jlpt == 'N3' ? 'active' : ''}">N3</a>
@@ -105,6 +106,18 @@
                         <a href="${pageContext.request.contextPath}/WordController?cmd=main" class="btn-sub">메인으로</a>
                         <a href="${pageContext.request.contextPath}/QuizController?cmd=quiz_incorrect" class="btn-sub btn-main" style="background-color: var(--mnu-green);">오답노트 확인</a>
                     </div>
+                    
+                    <%-- 하단 레벨 메뉴 생략 가능 --%>
+                    <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; text-align: center;">
+                        <p style="color:#555; margin-bottom:10px; font-weight:bold;">다른 레벨도 풀어보세요!</p>
+                        <div class="level-menu" style="margin-bottom:0;">
+                            <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N1" class="btn-level">N1</a>
+                            <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N2" class="btn-level">N2</a>
+                            <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N3" class="btn-level">N3</a>
+                            <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N4" class="btn-level">N4</a>
+                            <a href="${pageContext.request.contextPath}/QuizController?cmd=word_quiz&jlpt=N5" class="btn-level">N5</a>
+                        </div>
+                    </div>
 
                 </c:when>
 
@@ -112,28 +125,26 @@
                 <%-- [CASE B] 문제 풀기 화면 --%>
                 <c:otherwise>
                     
-                    <%-- 이미 푼 경우 (오늘의 퀴즈 등) --%>
+                    <%-- 이미 푼 경우 --%>
                     <c:if test="${alreadySolved}">
                         <div style="padding: 40px 0;">
                             <h3 style="color:#555; margin-bottom:15px;">${msg}</h3>
                             <p style="color:#888;">내일 새로운 문제가 찾아옵니다!</p>
-                            <p style="margin-top:20px; font-size:18px;">
-                                오늘의 기록: <span style="color:var(--mnu-blue); font-weight:bold;">${savedScore}</span>
-                            </p>
                             <div class="btn-group">
                                 <a href="${pageContext.request.contextPath}/WordController?cmd=main" class="btn-sub btn-main">메인으로</a>
                             </div>
                         </div>
                     </c:if>
 
-                    <%-- 문제 풀기 --%>
+                    <%-- 문제 풀기 폼 --%>
                     <c:if test="${!alreadySolved && not empty qlist}">
                         <form action="${pageContext.request.contextPath}/QuizController?cmd=word_quiz" method="post">
                             <input type="hidden" name="jlpt" value="${jlpt}">
                             
-                            <c:if test="${not empty isDaily}">
+                            <c:if test="${not empty isDaily or param.isDaily == 'true'}">
                                 <input type="hidden" name="isDaily" value="true">
                             </c:if>
+                            
                             <c:if test="${not empty isRetry}">
                                 <input type="hidden" name="isRetry" value="true">
                             </c:if>
@@ -164,6 +175,13 @@
                                     
                                     <input type="hidden" name="correct_${q.quiz_id}" value="${q.answer}">
                                     <input type="hidden" name="word_${q.quiz_id}" value="${q.word}">
+                                    
+                                    <input type="hidden" name="real_id_${q.quiz_id}" value="${q.word_id}">
+                                    
+                                    <input type="hidden" name="sel1_${q.quiz_id}" value="${q.selection1}">
+                                    <input type="hidden" name="sel2_${q.quiz_id}" value="${q.selection2}">
+                                    <input type="hidden" name="sel3_${q.quiz_id}" value="${q.selection3}">
+                                    <input type="hidden" name="sel4_${q.quiz_id}" value="${q.selection4}">
                                 </div>
                             </c:forEach>
 
@@ -175,6 +193,7 @@
                     <c:if test="${!alreadySolved && empty qlist}">
                         <div style="padding: 50px;">
                             <p style="color:#999; font-size:16px;">등록된 퀴즈가 없습니다.</p>
+                            <p style="color:#bbb; font-size:13px; margin-top:5px;">(단어를 4개 이상 등록해주세요)</p>
                             <div class="btn-group">
                                 <a href="${pageContext.request.contextPath}/WordController?cmd=main" class="btn-sub">돌아가기</a>
                             </div>

@@ -13,14 +13,14 @@
     }
 
     // 3. 공통 스타일 + 테마 스타일 경로
-    String baseCss = request.getContextPath() + "/style/style.css";  // 공통 레이아웃
-    String themeCss = null;                                         // 테마(있을 때만)
+    String baseCss = request.getContextPath() + "/style/style.css";
+    String themeCss = null;
 
     if (!"default".equals(currentTheme)) {
         themeCss = request.getContextPath() + "/style/" + currentTheme + "/style.css";
     }
 
-    // 4. 오늘의 퀴즈 세팅
+    // 4. 오늘의 퀴즈 세팅 (서버 껐다 켜도 데이터 유지용)
     QuizDAO.getInstance().checkAndSetGlobalQuiz(application);
 %>
 
@@ -32,11 +32,9 @@
     <title>MNU 일본어 사전</title>
 
     <link rel="stylesheet" href="<%= baseCss %>">
-
     <% if (themeCss != null) { %>
         <link rel="stylesheet" href="<%= themeCss %>">
     <% } %>
-
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 
@@ -57,7 +55,6 @@
                     <input type="text" id="searchInput" name="query" value="${searchQuery}" 
                            placeholder="단어, 뜻을 입력해보세요" class="search-input">
                     <button type="submit" class="search-btn">검색</button>
-                    
                     <div id="autoBox" class="auto-box"></div>
                 </form>
             </div>
@@ -103,25 +100,20 @@
                     </div>
                 </c:when>
 
-                <%-- [CASE C] 메인 대시보드 --%>
+                <%-- [CASE C] 메인 대시보드 (기본 화면) --%>
                 <c:otherwise>
                     <div class="card-container" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between;">
                         
                         <article class="card notice-card" 
                                  style="width: 100%; display: flex; align-items: center; padding: 20px 25px; cursor: pointer;"
                                  onclick="location.href='${pageContext.request.contextPath}/NoticeController?cmd=notice_list'">
-                            
-                            <div style="font-size: 32px; margin-right: 20px;">
-                                📢
-                            </div>
-                            
+                            <div style="font-size: 32px; margin-right: 20px;">📢</div>
                             <div style="flex-grow: 1;">
                                 <h3 style="margin: 0; font-size: 18px; color: #333;">NOTICE</h3>
                                 <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
                                     새로운 공지사항을 확인해보세요.
                                 </p>
                             </div>
-                            
                             <div>
                                 <span class="btn-action peri" style="padding: 8px 16px; font-size: 13px;">보기 &gt;</span>
                             </div>
@@ -131,11 +123,39 @@
                             <div class="card-header">TODAY'S QUIZ</div>
                             <div class="card-body">
                                 <c:choose>
+                                    <%-- 오늘의 퀴즈 데이터가 존재할 때 --%>
                                     <c:when test="${not empty applicationScope.todayQuiz}">
-                                        <h2 class="quiz-question">${applicationScope.todayQuiz.word}</h2>
-                                        <p class="quiz-desc">이 단어의 올바른 뜻은 무엇일까요?</p>
-                                        <a href="QuizController?cmd=daily_quiz" class="btn-action peri">정답 맞히기 ></a>
+                                        
+                                        <c:choose>
+                                            <%-- 1) 아직 안 풀었을 때 (쿠키 없음) --%>
+                                            <c:when test="${empty cookie.dailySolved}">
+                                                <h2 class="quiz-question">${applicationScope.todayQuiz.word}</h2>
+                                                <p class="quiz-desc">이 단어의 올바른 뜻은 무엇일까요?</p>
+                                                
+                                                <a href="QuizController?cmd=word_quiz&jlpt=${applicationScope.todayQuiz.jlpt}&force_word=${applicationScope.todayQuiz.word_id}" 
+                                                   class="btn-action peri">
+                                                    도전하기 >
+                                                </a>
+                                            </c:when>
+
+                                            <%-- 2) 이미 풀었을 때 (쿠키 있음) --%>
+                                            <c:otherwise>
+                                                <h2 class="quiz-question" style="color:#0C4DA1; font-size:20px;">Mission Complete!</h2>
+                                                <p class="quiz-desc" style="margin-bottom:15px;">오늘의 퀴즈 완료!<br>다른 레벨도 도전해보세요.</p>
+                                                
+                                                <div style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap;">
+                                                    <a href="QuizController?cmd=word_quiz&jlpt=N1" class="btn-level">N1</a>
+                                                    <a href="QuizController?cmd=word_quiz&jlpt=N2" class="btn-level">N2</a>
+                                                    <a href="QuizController?cmd=word_quiz&jlpt=N3" class="btn-level">N3</a>
+                                                    <a href="QuizController?cmd=word_quiz&jlpt=N4" class="btn-level">N4</a>
+                                                    <a href="QuizController?cmd=word_quiz&jlpt=N5" class="btn-level">N5</a>
+                                                </div>
+                                            </c:otherwise>
+                                        </c:choose>
+
                                     </c:when>
+                                    
+                                    <%-- 데이터 로딩 실패 시 --%>
                                     <c:otherwise>
                                         <h2 class="quiz-question" style="color:#ccc;">Loading...</h2>
                                         <p class="quiz-desc">퀴즈 데이터를 불러오는 중입니다.</p>
@@ -169,6 +189,7 @@
     </section>
 
    <script>
+   // 자동완성 스크립트 (기존 코드 유지)
    const searchInput = document.getElementById("searchInput");
    const autoBox = document.getElementById("autoBox");
 
@@ -189,17 +210,11 @@
                        autoBox.style.display = "none";
                    } else {
                        autoBox.style.cssText = `
-                           display: block !important;
-                           position: absolute !important;
-                           top: 65px !important;
-                           left: 0 !important;
-                           width: 100% !important;
-                           background-color: white !important;
-                           border: 1px solid #ddd !important;
-                           border-radius: 0 0 15px 15px;
-                           box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-                           z-index: 99999 !important;
-                           overflow: hidden;
+                           display: block !important; position: absolute !important;
+                           top: 65px !important; left: 0 !important; width: 100% !important;
+                           background-color: white !important; border: 1px solid #ddd !important;
+                           border-radius: 0 0 15px 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                           z-index: 99999 !important; overflow: hidden;
                        `;
 
                        data.forEach(item => {
@@ -208,32 +223,21 @@
                            const div = document.createElement("div");
                            
                            div.style.cssText = `
-                               padding: 12px 20px;
-                               border-bottom: 1px solid #f5f5f5;
-                               cursor: pointer;
-                               color: #333;
-                               font-size: 15px;
-                               background: white;
-                               text-align: left;
+                               padding: 12px 20px; border-bottom: 1px solid #f5f5f5;
+                               cursor: pointer; color: #333; font-size: 15px;
+                               background: white; text-align: left;
                            `;
                            
-                           div.innerHTML =
-                               "<span style='font-weight:bold; color:#0C4DA1;'>" + word + "</span>" +
-                               "<span style='color:#888; font-size:13px; margin-left:8px;'>" + korean + "</span>";
+                           div.innerHTML = "<span style='font-weight:bold; color:#0C4DA1;'>" + word + "</span>" +
+                                           "<span style='color:#888; font-size:13px; margin-left:8px;'>" + korean + "</span>";
 
                            div.addEventListener("click", () => {
                                searchInput.value = word;
                                autoBox.style.display = "none";
                            });
                            
-                           div.onmouseover = function() {
-                               this.style.backgroundColor = "#e0f2f1";
-                               this.style.color = "#00A295";
-                           };
-                           div.onmouseout = function() {
-                               this.style.backgroundColor = "#fff";
-                               this.style.color = "#333";
-                           };
+                           div.onmouseover = function() { this.style.backgroundColor = "#e0f2f1"; this.style.color = "#00A295"; };
+                           div.onmouseout = function() { this.style.backgroundColor = "#fff"; this.style.color = "#333"; };
 
                            autoBox.appendChild(div);
                        });

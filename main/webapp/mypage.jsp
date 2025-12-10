@@ -11,16 +11,36 @@
     
     String userId = myUser.getJdi_user();
     
-    // 포인트 & 통계 조회
+    // 포인트 & 통계 조회 (기본 정보)
     int currentPoint = PointDAO.getInstance().getTotalPoint(userId);
     int wrongWords = QuizDAO.getInstance().getIncorrectCount(userId);
-    int mySolveCount = QuizDAO.getInstance().getMySolveCount(userId);
     
-    int correctCount = mySolveCount - wrongWords;
-    if(correctCount < 0) correctCount = 0; 
+    // ---------------------------------------------------------
+    // [신규] 최근 30회 퀴즈 데이터 조회 (막대 그래프용)
+    // ---------------------------------------------------------
+    // QuizDAO에 getRecentScores 메서드가 있어야 합니다. (없으면 빈 리스트 반환 가정)
+    List<Integer> recentScores = QuizDAO.getInstance().getRecentScores(userId);
     
- // ---------------------------------------------------------
-    // 1. /images 폴더 스캔 및 프로필 목록 생성 (보내주신 코드)
+    // JS에 넘겨줄 데이터 문자열 만들기 (예: "[80, 100, 60, ...]")
+    StringBuilder dataStr = new StringBuilder("[");
+    StringBuilder labelStr = new StringBuilder("[");
+    
+    for(int i=0; i<recentScores.size(); i++) {
+        dataStr.append(recentScores.get(i));
+        labelStr.append("'").append(i+1).append("회'"); // 1회, 2회...
+        
+        if(i < recentScores.size() - 1) {
+            dataStr.append(",");
+            labelStr.append(",");
+        }
+    }
+    dataStr.append("]");
+    labelStr.append("]");
+    
+    boolean hasHistory = !recentScores.isEmpty();
+
+    // ---------------------------------------------------------
+    // 프로필 이미지 로직 (기존 유지)
     // ---------------------------------------------------------
     String imgDir = application.getRealPath("/images");
     File folder = new File(imgDir);
@@ -30,7 +50,6 @@
     if (files != null) {
         for (File f : files) {
             String name = f.getName();
-            // profile로 시작하고 .png로 끝나는 파일만 리스트에 추가
             if (name.startsWith("profile") && name.endsWith(".png")) {
                 profileList.add(name);
             }
@@ -38,40 +57,29 @@
     }
 
     String ctx = request.getContextPath();
-
-    // ---------------------------------------------------------
-    // 2. 현재 프로필 상태 확인 및 이미지 경로 결정 (핵심 로직)
-    // ---------------------------------------------------------
-    String currentProfile = (myUser != null) ? myUser.getJdi_profile() : "profile1.png"; // 로그인 안했거나 없으면 기본값
+    String currentProfile = (myUser != null) ? myUser.getJdi_profile() : "profile1.png"; 
     
-    // 만약 DB에 값이 null이거나 비어있으면 기본값으로 강제 설정
     if (currentProfile == null || currentProfile.trim().isEmpty()) {
         currentProfile = "profile1.png";
     }
 
     boolean showCustomProfile = false;
     String profileSrc = "";
-
-    // 현재 프로필이 기본 목록(profileList)에 있는지 확인
-	boolean inDefaultList = false;
-    	for (String p : profileList) {
-        	if (p.equals(currentProfile)) {
-            	inDefaultList = true;
-            	break;
+    boolean inDefaultList = false;
+    for (String p : profileList) {
+        if (p.equals(currentProfile)) {
+            inDefaultList = true;
+            break;
         }
     }
 
-    // 기본 목록에 없고, 파일명이 'profile'로 시작하지 않으면 커스텀 프로필로 간주
     if (!inDefaultList && !currentProfile.startsWith("profile")) {
         showCustomProfile = true;
     }
     
-    // ▼▼▼ [수정된 부분] ▼▼▼
     if (currentProfile.startsWith("upload") || showCustomProfile) {
-        // 업로드된 파일은 DB에 경로가 포함되어 있음 (예: upload/profile/xxx.png)
         profileSrc = ctx + "/" + currentProfile;
     } else {
-        // 기본 이미지는 images 폴더 안에 있음
         profileSrc = ctx + "/images/" + currentProfile;
     }
 %>
@@ -81,7 +89,6 @@
     <meta charset="UTF-8">
     <title>마이페이지 - My J-Dic</title>
     
-    <!-- CSS 로딩 로직 -->
     <%
         String currentTheme = (myUser.getJdi_theme() != null) ? myUser.getJdi_theme() : "default";
         String cssPath = request.getContextPath() + "/style/style.css";
@@ -92,43 +99,52 @@
     <link rel="stylesheet" href="${pageContext.request.contextPath}/style/user.css">
     <link rel="stylesheet" href="<%= cssPath %>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* 차트 컨테이너 스타일 보정 */
+        .chart-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .chart-container-box {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+    </style>
 </head>
 <body>
     <jsp:include page="/include/header.jsp" />
 
     <div class="mypage-container">
         
-        <!-- 왼쪽: 프로필 카드 -->
         <div class="profile-card">
             <div class="point-badge">
                 💰 <%= String.format("%,d", currentPoint) %> P
             </div>
-			<div class="profile-img-box">
-			    <img src="<%= profileSrc %>" alt="프로필 이미지" 
-			         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-			    
-			    <% if(showCustomProfile) { %>
-			        <% } %>
+            <div class="profile-img-box">
+                <img src="<%= profileSrc %>" alt="프로필 이미지" 
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
             </div>
             <h2 class="user-name"><%= myUser.getJdi_name() %></h2>
             <p class="user-email"><%= myUser.getJdi_email() %></p>
             
             <a href="pwd_check.jsp" class="btn-mypage btn-gray">내 정보 수정 ></a>
             
-            <!-- 오답노트 (테마 포인트 컬러 적용) -->
             <a href="${pageContext.request.contextPath}/QuizController?cmd=quiz_incorrect" class="btn-mypage" style="border:1px solid var(--chart-color-wrong); color:var(--chart-color-wrong); background:#fff;">
                 📝 오답노트 확인 (<%= wrongWords %>개)
             </a>
             
-            <!-- 즐겨찾기 (하드코딩된 금색 제거 -> 테마 서브 컬러 적용) -->
             <a href="${pageContext.request.contextPath}/WordController?cmd=bookmark_list" class="btn-mypage" style="border:1px solid var(--mnu-green); color:var(--mnu-green); background:#fff;">
                 ⭐ 즐겨찾기 단어장
             </a>
             
-            <!-- 테마 상점 (테마 메인 컬러 적용) -->
-          	<a href="${pageContext.request.contextPath}/theme_store.jsp" class="btn-mypage" style="background:#fff; border:1px solid var(--mnu-blue); color:var(--mnu-blue);">
-		    	🎨 테마 상점 가기
-			</a>
+            <a href="${pageContext.request.contextPath}/theme_store.jsp" class="btn-mypage" style="background:#fff; border:1px solid var(--mnu-blue); color:var(--mnu-blue);">
+                🎨 테마 상점 가기
+            </a>
 
             <a href="${pageContext.request.contextPath}/request/requesr_word.jsp" class="btn-mypage btn-outline-green">
                 ➕ 단어 등록 신청
@@ -139,46 +155,84 @@
             </a>
         </div>
 
-        <!-- 오른쪽: 학습 통계 -->
         <div class="chart-section">
-            <h3 class="chart-title">나의 학습 활동</h3>
-            <div style="width:300px; height:300px; position:relative;">
-                <% if(mySolveCount == 0) { %>
+            <h3 class="chart-title">최근 학습 성취도 (Last 30)</h3>
+            
+            <div class="chart-container-box">
+                <% if(!hasHistory) { %>
                     <p style="text-align:center; padding-top:130px; color:#999;">
-                        아직 푼 문제가 없어요.<br>퀴즈에 도전해보세요!
+                        아직 푼 퀴즈 기록이 없어요.<br>
+                        퀴즈를 풀면 여기에 그래프가 나타납니다!
                     </p>
                 <% } else { %>
                     <canvas id="myChart"></canvas>
                 <% } %>
             </div>
-             <p style="text-align:center; margin-top:20px; font-size:14px; color:#666;">
-                총 <strong><%= mySolveCount %></strong>문제 풀이 / 
-                <!-- 하드코딩된 빨간색 제거 -> 테마 오답 컬러 변수 적용 -->
-                <span style="color:var(--chart-color-wrong); font-weight:bold;"><%= wrongWords %></span>개 오답
-            </p>
+            
+            <% if(hasHistory) { %>
+                <p style="text-align:center; margin-top:10px; font-size:13px; color:#666;">
+                    최근 30회의 퀴즈 정답률(%) 변화 추이입니다.
+                </p>
+            <% } %>
         </div>
     </div>
 
-    <% if(mySolveCount > 0) { %>
+    <% if(hasHistory) { %>
     <script>
-        // 1. 현재 적용된 테마의 CSS 변수 값 읽어오기 (JavaScript가 테마를 인식하도록 함)
+        // 테마 색상 가져오기
         const styles = getComputedStyle(document.documentElement);
-        const colorCorrect = styles.getPropertyValue('--chart-color-correct').trim();
-        const colorWrong = styles.getPropertyValue('--chart-color-wrong').trim();
+        const themeColor = styles.getPropertyValue('--mnu-blue').trim() || '#0C4DA1'; // 기본값 파랑
+        const themeBg = styles.getPropertyValue('--mnu-green').trim() || '#00A295'; // 보조값 초록
 
-        const ctx = document.getElementById('myChart');
+        const ctx = document.getElementById('myChart').getContext('2d');
+        
+        // 그라데이션 효과 (선택사항)
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, themeColor);
+        gradient.addColorStop(1, '#ffffff');
+
         new Chart(ctx, {
-            type: 'doughnut',
+            type: 'bar', // 막대 그래프
             data: {
-                labels: ['정답', '오답'],
+                labels: <%= labelStr.toString() %>, // ['1회', '2회'...]
                 datasets: [{
-                    data: [<%= correctCount %>, <%= wrongWords %>],
-                    // 2. 읽어온 변수 값 적용 (테마에 따라 그래프 색 자동 변경)
-                    backgroundColor: [colorCorrect, colorWrong], 
-                    borderWidth: 0
+                    label: '정답률 (%)',
+                    data: <%= dataStr.toString() %>, // [80, 100, 60...]
+                    backgroundColor: themeColor,     // 막대 색상 (테마 따라감)
+                    borderRadius: 4,                 // 막대 둥글게
+                    barPercentage: 0.6               // 막대 너비 조절
                 }]
             },
-            options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100, // Y축 최대 100점
+                        grid: {
+                            color: '#f0f0f0'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false // X축 세로선 숨김
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // 범례 숨김 (깔끔하게)
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + '점';
+                            }
+                        }
+                    }
+                }
+            }
         });
     </script>
     <% } %>
