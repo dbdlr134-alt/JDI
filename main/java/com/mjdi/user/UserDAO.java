@@ -317,4 +317,87 @@ public class UserDAO {
         }
         return list;
     }
+    
+    public int buyThemeWithConn(Connection conn, String userId, String themeCode) {
+        int result = 0;
+        String sql = "INSERT INTO jdi_my_theme (jdi_user, theme_code) VALUES (?, ?)";
+        
+        // try-with-resources 사용 (pstmt만 닫음)
+        try (java.sql.PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setString(2, themeCode);
+            result = pstmt.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 서비스(Service)에서 롤백할 수 있도록 예외를 던지거나, 
+            // 0을 리턴하여 실패를 알림 (여기서는 0 리턴 방식 사용)
+        }
+        return result;
+    }
+    
+    public int updateAllWithConn(Connection conn, String id, String name, String phone, String email, String newPw, String profile) {
+        int result = 0;
+        java.sql.PreparedStatement pstmt = null;
+        StringBuilder sql = new StringBuilder();
+        
+        // 비밀번호 변경 여부에 따라 쿼리가 달라질 수 있음
+        // newPw가 비어있으면(null or "") 비밀번호는 수정하지 않음
+        boolean updatePw = (newPw != null && !newPw.trim().isEmpty());
+
+        sql.append("UPDATE jdi_user SET ");
+        sql.append("jdi_name=?, jdi_phone=?, jdi_email=?, jdi_profile=? ");
+        if (updatePw) {
+            sql.append(", jdi_pw=? ");
+        }
+        sql.append("WHERE jdi_user=?");
+
+        try {
+            pstmt = conn.prepareStatement(sql.toString());
+            int idx = 1;
+            pstmt.setString(idx++, name);
+            pstmt.setString(idx++, phone);
+            pstmt.setString(idx++, email);
+            pstmt.setString(idx++, profile);
+            
+            if (updatePw) {
+                pstmt.setString(idx++, newPw); // 암호화 필요 시 여기서 처리
+            }
+            
+            pstmt.setString(idx++, id); // WHERE 절 조건
+            
+            result = pstmt.executeUpdate();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 서비스에서 롤백하도록 예외를 던지거나 0 리턴
+        } finally {
+            // Connection은 닫지 않고 Statement만 닫음
+            if (pstmt != null) try { pstmt.close(); } catch(Exception e) {}
+        }
+        
+        return result;
+    }
+    
+    public int updateProfileWithConn(Connection conn, String userId, String profilePath) {
+        int result = 0;
+        PreparedStatement pstmt = null;
+        String sql = "UPDATE jdi_user SET jdi_profile = ? WHERE jdi_user = ?";
+
+        try {
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, profilePath);
+            pstmt.setString(2, userId);
+            
+            result = pstmt.executeUpdate();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 에러 발생 시 0 반환 (Service에서 이를 감지하여 rollback 처리)
+        } finally {
+            // 주의: conn.close()는 하지 않고, pstmt만 닫습니다.
+            if (pstmt != null) try { pstmt.close(); } catch (Exception e) {}
+        }
+        
+        return result;
+    }
 }
