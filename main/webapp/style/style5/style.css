@@ -1,0 +1,532 @@
+@charset "UTF-8";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+/* ========================================= */
+/* [테마: 미드나잇 도쿄] - Dark Mode         */
+/* ========================================= */
+
+:root {
+    /* 1. 포인트 컬러 – 네온 사이안 + 네온 퍼플 */
+    --mnu-green: #00E5FF;       /* 형광 사이안 (강조/버튼) */
+    --mnu-blue:  #7C4DFF;       /* 네온 퍼플 (메인/로고) */
+
+    /* 2. 배경 – 깊은 남색/검정 계열 */
+    --bg-color:    #121218;     /* 전체 페이지 배경 (아주 어두운 남색) */
+    --section-bg:  #1E1E24;     /* 카드/헤더 배경 (조금 밝은 다크그레이) */
+
+    /* 3. 텍스트 – 눈이 편한 밝은 회색조 */
+    --text-dark: #ECECF1;       /* 제목/본문용 흰색에 가까운 회색 */
+    --text-gray: #A0A0B0;       /* 부가 설명용 중간 회색 */
+
+    /* 4. 기타 요소 */
+    --border-color: #2D2D3A;    /* 어두운 경계선 */
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.6); /* 진하고 깊은 그림자 */
+
+    /* 5. 그래프/차트 색상 */
+    --chart-color-correct: #00E5FF; /* 정답: 형광 사이안 */
+    --chart-color-wrong:   #FF4081; /* 오답: 핫핑크 */
+
+    /* 6. 칩/뱃지 배경 */
+    --chip-bg:   #2C2C35;
+    --chip-soft: #3A3A45;
+}
+
+/* === 초기화 및 공통 스타일 === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-dark);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: 0.2s;
+}
+
+ul { list-style: none; }
+button { font-family: 'Noto Sans KR', sans-serif; cursor: pointer; }
+
+/* 레이아웃 */
+.inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+}
+
+.center-box {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* ========================================= */
+/* 헤더 (Header)                             */
+/* ========================================= */
+
+.top-header {
+    height: 70px;
+    background: var(--section-bg); /* 어두운 배경 */
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.top-header .inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 1200px;
+    margin: 0 auto;
+    height: 100%;
+}
+
+/* 로고 스타일 (네온 효과) */
+.logo a {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--mnu-green);
+    letter-spacing: -0.5px;
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.4); /* 네온 글로우 */
+}
+
+/* ★ 아이콘 추가 부분 (달) */
+.logo a::after {
+    content: " 🌙"; 
+    font-size: 18px;
+}
+
+.util-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* 유저 정보 바 */
+.user-info-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 10px;
+}
+
+.user-info-bar span {
+    font-size: 16px;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.user-info-bar strong {
+    font-size: 17px;
+    color: var(--mnu-blue);
+    margin-right: 2px;
+}
+
+.user-info-bar img {
+    border-radius: 50%;
+    border: 2px solid #333; /* 어두운 테두리 */
+}
+
+/* 알림 종 */
+.alarm-bell {
+    text-decoration: none;
+    font-size: 20px;
+    color: #606070; /* 어두운 회색 */
+    margin-left: 10px;
+    position: relative;
+    transition: 0.3s;
+}
+
+.alarm-bell.active {
+    color: #FFD54F; /* 활성 시 노란색 */
+    animation: swing 1s ease infinite;
+}
+
+.alarm-bell .dot {
+    position: absolute;
+    top: 0;
+    right: -2px;
+    width: 6px;
+    height: 6px;
+    background: #FF4081; /* 핫핑크 점 */
+    border-radius: 50%;
+}
+
+@keyframes swing {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(8deg); }
+    75% { transform: rotate(-8deg); }
+}
+
+/* 메뉴 버튼 */
+.btn-menu {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-dark);
+    margin-left: 15px;
+    padding: 5px;
+}
+
+/* 드롭다운 메뉴 (다크 모드) */
+.dropdown-content {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background-color: var(--section-bg);
+    min-width: 200px;
+    box-shadow: var(--shadow);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    z-index: 9999;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+}
+
+.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-content .menu-profile-area {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #2a2a35, #1f1f25);
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    color: var(--text-dark);
+}
+
+.dropdown-content .menu-item {
+    display: block;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.dropdown-content .menu-item:hover {
+    background-color: #2C2C35;
+    color: var(--mnu-green);
+}
+
+/* ========================================= */
+/* 메인 검색/카드 부분                       */
+/* ========================================= */
+
+/* 검색 섹션 배경 */
+.search-section {
+    padding: 40px 0 30px;
+    /* 어두운 그라데이션 */
+    background: radial-gradient(circle at top, #1E1E24 0%, #121218 100%);
+}
+
+.title-area h1 {
+    color: var(--mnu-blue);
+    text-shadow: 0 0 15px rgba(124, 77, 255, 0.3); /* 보라색 글로우 */
+}
+
+.sub-title {
+    color: var(--text-gray);
+}
+
+.search-input {
+    border: 1px solid var(--border-color);
+    background: #25252e; /* 입력창도 어둡게 */
+    color: #fff;
+}
+
+.search-btn {
+    background: var(--mnu-blue);
+    color: #FFFFFF;
+}
+.search-btn:hover {
+    filter: brightness(1.1); /* 밝게 */
+}
+
+/* 카드 공통 (다크) */
+.card {
+    background: var(--section-bg);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    color: var(--text-dark);
+}
+
+/* 카드 헤더 (보라 -> 딥퍼플) */
+.card-header {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: #FFFFFF;
+    padding: 10px 16px;
+    border-radius: 18px 18px 0 0;
+    background: linear-gradient(135deg, var(--mnu-blue), #512DA8);
+}
+
+/* 액션 버튼 */
+.btn-action {
+    display: inline-block;
+    padding: 9px 22px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    border: none;
+    background: var(--mnu-blue);
+    color: #FFFFFF;
+}
+
+.btn-action.peri {
+    background: var(--mnu-green); /* 형광 사이안 */
+    color: #000; /* 밝은 배경엔 검은 글씨 */
+    font-weight: 700;
+}
+
+.btn-action:hover {
+    filter: brightness(1.1);
+}
+
+/* JLPT 급수 버튼 */
+.level-btn,
+.btn-level {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid var(--border-color);
+    color: var(--mnu-green);
+    background: #25252e;
+}
+
+.level-btn:hover,
+.btn-level:hover {
+    background: var(--mnu-green);
+    color: #000;
+    box-shadow: 0 0 8px var(--mnu-green); /* 호버 시 네온 효과 */
+}
+
+/* ========================================= */
+/* 나만의 즐겨찾기 단어장 (bookmark)       */
+/* ========================================= */
+
+body.bookmark-page {
+    background: var(--bg-color);
+}
+
+.bookmark-wrap {
+    max-width: 880px;
+    margin: 60px auto 80px;
+    padding: 0 24px;
+}
+
+.bookmark-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bookmark-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.bookmark-count {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--text-gray);
+}
+
+.bookmark-count strong {
+    color: var(--mnu-green);
+}
+
+/* 리스트 스타일 */
+.bookmark-list {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bookmark-item {
+    position: relative;
+    background: var(--section-bg);
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    padding: 16px 18px 14px;
+    transition: 0.18s ease;
+    color: var(--text-dark);
+}
+
+.bookmark-item:hover {
+    border-color: var(--mnu-green);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.15); /* 사이안 글로우 */
+    transform: translateY(-3px);
+}
+
+.bookmark-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.bookmark-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.bookmark-word-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.bookmark-word-box .word {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--mnu-green); /* 단어 강조색 */
+}
+
+.bookmark-word-box .doc {
+    font-size: 13px;
+    color: var(--text-gray);
+}
+
+/* JLPT 뱃지 (다크) */
+.jlpt-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #333;
+    color: var(--mnu-green);
+    font-size: 11px;
+    font-weight: 700;
+    border: 1px solid #444;
+}
+
+.bookmark-row-bottom .korean {
+    display: block;
+    font-size: 14px;
+    color: var(--text-dark);
+    margin-top: 2px;
+}
+
+/* 삭제 버튼(X) */
+.bookmark-remove {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #666;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.15s ease;
+}
+
+.bookmark-remove:hover {
+    background: #442;
+    color: var(--mnu-green);
+}
+
+/* 비었을 때 */
+.no-bookmark {
+    margin-top: 40px;
+    padding: 48px 20px 40px;
+    text-align: center;
+    border-radius: 18px;
+    background: var(--section-bg);
+    border: 1px dashed var(--border-color);
+    color: var(--text-gray);
+}
+
+.no-bookmark p {
+    margin-bottom: 18px;
+    font-size: 14px;
+}
+
+.btn-bookmark-main {
+    display: inline-block;
+    padding: 9px 20px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    background: var(--mnu-blue);
+    color: #ffffff;
+    transition: 0.16s ease;
+}
+
+.btn-bookmark-main:hover {
+    filter: brightness(1.1);
+}
+
+/* 하단 버튼 */
+.bookmark-footer {
+    text-align: center;
+    margin-top: 28px;
+}
+
+.btn-bookmark-back {
+    display: inline-block;
+    padding: 9px 24px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    background: #333;
+    color: var(--text-dark);
+    border: 1px solid #444;
+    transition: 0.16s ease;
+}
+
+.btn-bookmark-back:hover {
+    background: #444;
+    border-color: #555;
+}
+
+/* 반응형 */
+@media (max-width: 640px) {
+    .bookmark-wrap {
+        margin-top: 40px;
+        padding: 0 16px 40px;
+    }
+
+    .bookmark-item {
+        padding: 14px 14px 12px;
+    }
+
+    .bookmark-word-box .word {
+        font-size: 17px;
+    }
+}

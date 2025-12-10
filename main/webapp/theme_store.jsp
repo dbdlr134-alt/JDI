@@ -145,6 +145,9 @@
                        if(code.contains("black") || code.contains("2")) icon = "🌙";
                        if(code.contains("pixie") || code.contains("3")) icon = "✨";
                        if(code.contains("kessoku") || code.contains("4")) icon = "🎸";
+                       if(code.contains("midnight") || code.contains("5")) icon = "🌃";
+                       if(code.contains("matcha") || code.contains("6")) icon = "🍵";
+                       if(code.contains("study") || code.contains("7")) icon = "☕";
                        if("A".equals(isActive)) icon = "🔒"; // 시크릿은 자물쇠 등
             %>
                 <div class="theme-card <%= "A".equals(isActive) ? "secret-card" : "" %>">
