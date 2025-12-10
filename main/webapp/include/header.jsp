@@ -12,19 +12,30 @@
 
     int headerPoint = 0;
     int unreadMsg = 0;
+    // 기본값 설정
     String headerProfile = "profile1.png";   
     
     // 1. 로그인 정보 갱신
     if (headerUser != null) {
         headerPoint = PointDAO.getInstance().getTotalPoint(headerUser.getJdi_user());
+        
+        // DB에 저장된 프로필 값이 있다면 가져옴
         if (headerUser.getJdi_profile() != null && !headerUser.getJdi_profile().trim().isEmpty()) {
             headerProfile = headerUser.getJdi_profile();
         }
         unreadMsg = MessageDAO.getInstance().getUnreadCount(headerUser.getJdi_user());
     }
 
-    // 2. 프로필 이미지 경로
-    String profileSrc = ctx + "/images/" + headerProfile; 
+    // 2. [수정] 프로필 이미지 경로 결정 로직 (mypage.jsp와 동일하게 통일)
+    String profileSrc = ""; 
+    
+    if (headerProfile.startsWith("upload")) {
+        // 커스텀 이미지: DB에 이미 'upload/profile/...' 경로가 포함되어 있음
+        profileSrc = ctx + "/" + headerProfile;
+    } else {
+        // 기본 이미지: 'profile1.png' 등 -> /images/ 폴더에서 찾음
+        profileSrc = ctx + "/images/" + headerProfile;
+    }
 
     // 3. 최신 공지사항 가져오기
     String noticeMsg = "현재 등록된 공지사항이 없습니다. 새로운 소식을 기다려주세요!"; 

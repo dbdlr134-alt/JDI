@@ -123,7 +123,6 @@
                        String name = theme.getThemeName();
                        int price = theme.getPrice();
                        String desc = theme.getDescription();
-                       // DAO에서 받아온 is_active 값 (없으면 기본값 'Y' 처리)
                        String isActive = theme.getIsActive(); 
                        if(isActive == null) isActive = "Y";
 
@@ -131,14 +130,10 @@
 
                        boolean isOwned = (myThemes != null && myThemes.contains(code));
 
-                       // ========================================================
-                       // [핵심 로직] 시크릿 테마('AY') 처리
-                       // ========================================================
                        // 1. 판매 중지('N') 상태면 아예 안 보여줌
                        if("N".equals(isActive)) {
                            continue; 
                        }
-                       // 2. 시크릿('AY') 상태인데, 내가 가지고 있지 않다면 안 보여줌 (숨김)
                        if("A".equals(isActive) && !isAdmin) {
                            continue; 
                        }
@@ -154,7 +149,7 @@
             %>
                 <div class="theme-card <%= "A".equals(isActive) ? "secret-card" : "" %>">
                     
-                    <% if("AY".equals(isActive)) { %>
+                    <% if("A".equals(isActive)) { %>
                         <span class="secret-badge">SECRET</span>
                     <% } %>
 

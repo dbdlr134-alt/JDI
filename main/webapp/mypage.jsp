@@ -3,6 +3,7 @@
 <%@ page import="com.mjdi.user.PointDAO" %>
 <%@ page import="com.mjdi.quiz.QuizDAO" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page import="java.io.File, java.util.List, java.util.ArrayList" %>
 
 <%
     UserDTO myUser = (UserDTO)session.getAttribute("sessionUser");
@@ -17,6 +18,62 @@
     
     int correctCount = mySolveCount - wrongWords;
     if(correctCount < 0) correctCount = 0; 
+    
+ // ---------------------------------------------------------
+    // 1. /images 폴더 스캔 및 프로필 목록 생성 (보내주신 코드)
+    // ---------------------------------------------------------
+    String imgDir = application.getRealPath("/images");
+    File folder = new File(imgDir);
+    File[] files = folder.listFiles();
+    List<String> profileList = new ArrayList<>();
+
+    if (files != null) {
+        for (File f : files) {
+            String name = f.getName();
+            // profile로 시작하고 .png로 끝나는 파일만 리스트에 추가
+            if (name.startsWith("profile") && name.endsWith(".png")) {
+                profileList.add(name);
+            }
+        }
+    }
+
+    String ctx = request.getContextPath();
+
+    // ---------------------------------------------------------
+    // 2. 현재 프로필 상태 확인 및 이미지 경로 결정 (핵심 로직)
+    // ---------------------------------------------------------
+    String currentProfile = (myUser != null) ? myUser.getJdi_profile() : "profile1.png"; // 로그인 안했거나 없으면 기본값
+    
+    // 만약 DB에 값이 null이거나 비어있으면 기본값으로 강제 설정
+    if (currentProfile == null || currentProfile.trim().isEmpty()) {
+        currentProfile = "profile1.png";
+    }
+
+    boolean showCustomProfile = false;
+    String profileSrc = "";
+
+    // 현재 프로필이 기본 목록(profileList)에 있는지 확인
+	boolean inDefaultList = false;
+    	for (String p : profileList) {
+        	if (p.equals(currentProfile)) {
+            	inDefaultList = true;
+            	break;
+        }
+    }
+
+    // 기본 목록에 없고, 파일명이 'profile'로 시작하지 않으면 커스텀 프로필로 간주
+    if (!inDefaultList && !currentProfile.startsWith("profile")) {
+        showCustomProfile = true;
+    }
+    
+    // ▼▼▼ [수정된 부분] ▼▼▼
+    if (currentProfile.startsWith("upload") || showCustomProfile) {
+        // 업로드된 파일은 DB에 경로가 포함되어 있음 (예: upload/profile/xxx.png)
+        profileSrc = ctx + "/" + currentProfile;
+    } else {
+        // 기본 이미지는 images 폴더 안에 있음
+        profileSrc = ctx + "/images/" + currentProfile;
+    }
 %>
 <!DOCTYPE html>
 <html lang="ko">
@@ -46,8 +103,12 @@
             <div class="point-badge">
                 💰 <%= String.format("%,d", currentPoint) %> P
             </div>
-            <div class="profile-img-box">
-                <img src="${pageContext.request.contextPath}/images/<%= myUser.getJdi_profile() %>" alt="프로필">
+			<div class="profile-img-box">
+			    <img src="<%= profileSrc %>" alt="프로필 이미지" 
+			         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+			    
+			    <% if(showCustomProfile) { %>
+			        <% } %>
             </div>
             <h2 class="user-name"><%= myUser.getJdi_name() %></h2>
             <p class="user-email"><%= myUser.getJdi_email() %></p>
