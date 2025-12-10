@@ -99,7 +99,7 @@
                     <a href="<%= ctx %>/logout.do" class="menu-item logout">로그아웃</a>
                 <% } else { %>
                     <a href="<%= ctx %>/login.jsp" class="menu-item">로그인</a>
-                    <a href="<%= ctx %>/join.jsp" class="menu-item">회원가입</a>
+                    <a href="<%= ctx %>/join_agreement.jsp" class="menu-item">회원가입</a>
                 <% } %>
             </div>
         </nav>

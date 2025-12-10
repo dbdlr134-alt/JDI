@@ -38,7 +38,7 @@
             <div class="auth-links">
                 <a href="${pageContext.request.contextPath}/find_user.jsp">아이디/비밀번호 찾기</a>
                 <span style="color:#ddd;">|</span>
-                <a href="${pageContext.request.contextPath}/join.jsp" style="color:var(--mnu-blue); font-weight:bold;">회원가입</a>
+                <a href="${pageContext.request.contextPath}/join_agreement.jsp" style="color:var(--mnu-blue); font-weight:bold;">회원가입</a>
             </div>
         </div>
     </div>
