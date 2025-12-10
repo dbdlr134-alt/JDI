@@ -334,21 +334,26 @@ public class UserDAO {
         }
         return result;
     }
+    /**
+     * [트랜잭션용] 회원 정보 전체 수정
+     * - 수정: 테이블명을 jdi_user -> jdi_login 으로 변경
+     */
     public int updateAllWithConn(Connection conn, String id, String name, String phone, String email, String newPw, String profile) {
         int result = 0;
         java.sql.PreparedStatement pstmt = null;
         StringBuilder sql = new StringBuilder();
         
-        // 비밀번호 변경 여부에 따라 쿼리가 달라질 수 있음
-        // newPw가 비어있으면(null or "") 비밀번호는 수정하지 않음
         boolean updatePw = (newPw != null && !newPw.trim().isEmpty());
 
-        sql.append("UPDATE jdi_user SET ");
+        // ★ [수정] jdi_user 테이블이 아니라 jdi_login 테이블입니다.
+        sql.append("UPDATE jdi_login SET "); 
         sql.append("jdi_name=?, jdi_phone=?, jdi_email=?, jdi_profile=? ");
+        
         if (updatePw) {
             sql.append(", jdi_pw=? ");
         }
-        sql.append("WHERE jdi_user=?");
+        // 조건절 컬럼명은 jdi_user가 맞습니다. (테이블명만 jdi_login)
+        sql.append("WHERE jdi_user=?"); 
 
         try {
             pstmt = conn.prepareStatement(sql.toString());
@@ -359,28 +364,32 @@ public class UserDAO {
             pstmt.setString(idx++, profile);
             
             if (updatePw) {
-                pstmt.setString(idx++, newPw); // 암호화 필요 시 여기서 처리
+                pstmt.setString(idx++, newPw);
             }
             
-            pstmt.setString(idx++, id); // WHERE 절 조건
+            pstmt.setString(idx++, id);
             
             result = pstmt.executeUpdate();
             
         } catch (Exception e) {
             e.printStackTrace();
-            // 서비스에서 롤백하도록 예외를 던지거나 0 리턴
         } finally {
-            // Connection은 닫지 않고 Statement만 닫음
             if (pstmt != null) try { pstmt.close(); } catch(Exception e) {}
         }
         
         return result;
     }
-    
+
+    /**
+     * [트랜잭션용] 프로필 이미지만 변경 (관리자 승인용)
+     * - 수정: 테이블명을 jdi_user -> jdi_login 으로 변경
+     */
     public int updateProfileWithConn(Connection conn, String userId, String profilePath) {
         int result = 0;
         PreparedStatement pstmt = null;
-        String sql = "UPDATE jdi_user SET jdi_profile = ? WHERE jdi_user = ?";
+        
+        // ★ [수정] 여기도 jdi_login 으로 변경해야 합니다.
+        String sql = "UPDATE jdi_login SET jdi_profile = ? WHERE jdi_user = ?";
 
         try {
             pstmt = conn.prepareStatement(sql);
@@ -391,9 +400,7 @@ public class UserDAO {
             
         } catch (Exception e) {
             e.printStackTrace();
-            // 에러 발생 시 0 반환 (Service에서 이를 감지하여 rollback 처리)
         } finally {
-            // 주의: conn.close()는 하지 않고, pstmt만 닫습니다.
             if (pstmt != null) try { pstmt.close(); } catch (Exception e) {}
         }
         

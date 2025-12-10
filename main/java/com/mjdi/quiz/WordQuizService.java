@@ -24,22 +24,56 @@ public class WordQuizService implements Action {
     public void process(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String method = request.getMethod();
         
+        // --------------------------------------------------------
+        // [1] POST 방식: 채점 및 결과 DB 저장
+        // --------------------------------------------------------
         if ("POST".equalsIgnoreCase(method)) {
             processGrading(request, response);
-        } else {
-            // GET 방식: 퀴즈 출제 (읽기 전용이라 트랜잭션 불필요)
+        } 
+        // --------------------------------------------------------
+        // [2] GET 방식: 문제 출제
+        // --------------------------------------------------------
+        else {
             String jlpt = request.getParameter("jlpt");
             if (jlpt == null || jlpt.isEmpty()) jlpt = "N5";
+            
+            String forceWordId = request.getParameter("force_word");
+            QuizDAO dao = QuizDAO.getInstance();
+            List<QuizDTO> qlist = new ArrayList<>();
 
-            List<QuizDTO> qlist = QuizDAO.getInstance().getRandomQuiz(jlpt);
+            try {
+                if (forceWordId != null && !forceWordId.isEmpty()) {
+                    int targetId = Integer.parseInt(forceWordId);
+                    
+                    // 1번 문제 고정
+                    QuizDTO firstQuiz = dao.getQuizByWordId(targetId);
+                    if(firstQuiz != null) qlist.add(firstQuiz);
+                    
+                    // 나머지 랜덤
+                    List<QuizDTO> randomList = dao.getRandomQuiz(jlpt);
+                    for (QuizDTO q : randomList) {
+                        if (q.getWord_id() == targetId) continue;
+                        qlist.add(q);
+                        if (qlist.size() >= 5) break;
+                    }
+                    request.setAttribute("isDaily", true); 
+                } else {
+                    qlist = dao.getRandomQuiz(jlpt);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                qlist = dao.getRandomQuiz(jlpt);
+            }
 
             request.setAttribute("qlist", qlist);
             request.setAttribute("jlpt", jlpt);
-            
             request.getRequestDispatcher("quiz/quiz.jsp").forward(request, response);
         }
     }
 
+    // ==========================================================
+    //  ★ 채점 및 DB 저장 로직 (수정 완료)
+    // ==========================================================
     private void processGrading(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession();
         UserDTO user = (UserDTO) session.getAttribute("sessionUser");
@@ -50,108 +84,129 @@ public class WordQuizService implements Action {
         int wrongCount = 0;
         int earnedPoints = 0;
         
+        // 오답 복습 모드인지 확인
         String isRetryParam = request.getParameter("isRetry");
         boolean isRetry = "true".equals(isRetryParam);
         
         List<Map<String, String>> resultList = new ArrayList<>();
         
-        // DAO 인스턴스 준비
         QuizDAO quizDao = QuizDAO.getInstance();
         PointDAO pointDao = PointDAO.getInstance();
-        
         Connection conn = null;
 
         try {
-            // 1. 트랜잭션 시작
             conn = DBM.getConnection();
-            conn.setAutoCommit(false); // 자동 커밋 끄기
+            conn.setAutoCommit(false); // 트랜잭션 시작
 
             Enumeration<String> params = request.getParameterNames();
             while (params.hasMoreElements()) {
                 String paramName = params.nextElement();
+                
+                // 파라미터가 정답 제출(ans_1, ans_2...)인 경우만 처리
                 if (paramName.startsWith("ans_")) {
-                    String quizIdStr = paramName.substring(4);
-                    int quizId = Integer.parseInt(quizIdStr);
                     
-                    String myAns = request.getParameter(paramName);
-                    String correctAns = request.getParameter("correct_" + quizIdStr); // 보안상 취약할 수 있으니 추후 DB 조회 방식으로 변경 권장
-                    String word = request.getParameter("word_" + quizIdStr);
+                    // 1. 문제 번호 및 ID 추출
+                    String questionNum = paramName.substring(4); 
                     
-                    boolean isCorrect = (myAns != null && myAns.equals(correctAns));
+                    // 2. 진짜 단어 ID 가져오기
+                    String realIdStr = request.getParameter("real_id_" + questionNum);
+                    int targetWordId = 0;
+                    if(realIdStr != null) targetWordId = Integer.parseInt(realIdStr);
+                    else continue;
+
+                    // 3. 내 답(번호)과 정답(번호) 가져오기
+                    String myAnsNum = request.getParameter(paramName); // 예: "1"
+                    String correctAnsNum = request.getParameter("correct_" + questionNum); // 예: "2"
+                    String word = request.getParameter("word_" + questionNum);
+
+                    // ★★★ [추가] 번호를 텍스트로 변환하는 로직 시작 ★★★
+                    String sel1 = request.getParameter("sel1_" + questionNum);
+                    String sel2 = request.getParameter("sel2_" + questionNum);
+                    String sel3 = request.getParameter("sel3_" + questionNum);
+                    String sel4 = request.getParameter("sel4_" + questionNum);
+
+                    // 내 답 번호를 텍스트로 변환
+                    String myAnsText = "";
+                    if ("1".equals(myAnsNum)) myAnsText = sel1;
+                    else if ("2".equals(myAnsNum)) myAnsText = sel2;
+                    else if ("3".equals(myAnsNum)) myAnsText = sel3;
+                    else if ("4".equals(myAnsNum)) myAnsText = sel4;
+
+                    // 정답 번호를 텍스트로 변환
+                    String correctAnsText = "";
+                    if ("1".equals(correctAnsNum)) correctAnsText = sel1;
+                    else if ("2".equals(correctAnsNum)) correctAnsText = sel2;
+                    else if ("3".equals(correctAnsNum)) correctAnsText = sel3;
+                    else if ("4".equals(correctAnsNum)) correctAnsText = sel4;
+                    // ★★★ [변환 로직 끝] ★★★
+
+                    boolean isCorrect = (myAnsNum != null && myAnsNum.equals(correctAnsNum));
                     
+                    // 결과 리스트에 담기 (이제 번호 대신 텍스트를 넣습니다!)
                     Map<String, String> map = new HashMap<>();
                     map.put("word", word);
-                    map.put("myAns", myAns);
-                    map.put("correctAns", correctAns);
+                    map.put("myAns", myAnsText);         // 수정됨 (숫자 -> 텍스트)
+                    map.put("correctAns", correctAnsText); // 수정됨 (숫자 -> 텍스트)
                     map.put("isCorrect", isCorrect ? "O" : "X");
                     resultList.add(map);
+                   
                     
                     if (isCorrect) {
                         correctCount++;
-                        totalScore += 20;
-                        // 오답 복습 모드일 경우, 맞췄으면 오답노트에서 제거
-                        if (isRetry && userId != null) {
-                            // [QuizDAO 메서드 추가 필요]
-                            quizDao.removeIncorrectNoteWithConn(conn, userId, quizId);
+                        totalScore += 20; 
+                        
+                        // [DB] 복습 모드라면 오답노트에서 삭제 (진짜 ID 사용)
+                        if (userId != null && isRetry) {
+                            quizDao.removeIncorrectNoteWithConn(conn, userId, targetWordId);
                         }
                     } else {
                         wrongCount++;
-                        // 틀렸으면 오답노트에 추가
+                        
+                        // [DB] 틀린 문제는 오답노트에 추가 (진짜 ID 사용)
                         if (userId != null) {
-                            // [QuizDAO 메서드 추가 필요]
-                            quizDao.addIncorrectNoteWithConn(conn, userId, quizId);
+                            quizDao.addIncorrectNoteWithConn(conn, userId, targetWordId);
                         }
                     }
                 }
             }
             
-            // 2. 포인트 지급 (Connection 전달)
+            // [DB] 포인트 지급 
             if (userId != null && correctCount > 0) {
-                earnedPoints = correctCount * 5;
-                // PointDAO.addPoint(Connection, ...) 사용
+                earnedPoints = correctCount * 2; 
                 pointDao.addPoint(conn, userId, earnedPoints, "퀴즈 정답 보상");
             }
-
-            // 3. 문제 풀이 횟수 증가 (Connection 전달)
+            
             if (userId != null) {
-                int totalAttempt = correctCount + wrongCount;
-                // [QuizDAO 메서드 추가 필요]
-                quizDao.updateSolveCountWithConn(conn, userId, totalAttempt);
+                // [DB] 마이페이지 그래프용 기록 저장
+                quizDao.insertQuizHistoryWithConn(conn, userId, correctCount, 5);
+                
+                // [DB] 총 풀이 횟수 증가 
+                quizDao.updateSolveCountWithConn(conn, userId, (correctCount + wrongCount));
             }
 
-            // 4. 모든 DB 작업 성공 시 커밋
-            conn.commit();
+            conn.commit(); // 커밋
 
         } catch (Exception e) {
-            // 5. 실패 시 롤백
-            if (conn != null) {
-                try { conn.rollback(); } catch (Exception ex) {}
-            }
+            if (conn != null) try { conn.rollback(); } catch(Exception ex) {}
             e.printStackTrace();
-            // 에러 시 사용자에게 알림을 줄지, 아니면 결과 화면은 보여주되 데이터 저장은 안 할지 결정 필요
-            // 여기서는 결과 화면은 보여주되 데이터 저장은 실패한 상태로 진행
         } finally {
-            // 6. 연결 종료
             DBM.close(conn, null, null);
         }
 
-        // 결과 화면 데이터 세팅
+        // 결과 화면에 보낼 데이터 세팅
         request.setAttribute("score", totalScore);
         request.setAttribute("correctCount", correctCount);
         request.setAttribute("wrongCount", wrongCount);
         request.setAttribute("earnedPoints", earnedPoints);
         request.setAttribute("resultList", resultList);
         
-        // 일일 미션 처리 (세션/어플리케이션 스코프 메모리 작업이라 트랜잭션과 무관)
+        // 오늘의 퀴즈 쿠키 굽기
         String isDaily = request.getParameter("isDaily");
-        if ("true".equals(isDaily) && userId != null) {
-            javax.servlet.ServletContext app = request.getServletContext();
-            java.util.Set<String> solvedUsers = (java.util.Set<String>) app.getAttribute("todaySolvedUsers");
-            if (solvedUsers == null) {
-                solvedUsers = new java.util.HashSet<>();
-                app.setAttribute("todaySolvedUsers", solvedUsers);
-            }
-            solvedUsers.add(userId);
+        if ("true".equals(isDaily)) {
+            javax.servlet.http.Cookie dailyCookie = new javax.servlet.http.Cookie("dailySolved", "true");
+            dailyCookie.setMaxAge(24 * 60 * 60); 
+            dailyCookie.setPath("/"); 
+            response.addCookie(dailyCookie);
         }
         
         request.getRequestDispatcher("quiz/quiz.jsp").forward(request, response);

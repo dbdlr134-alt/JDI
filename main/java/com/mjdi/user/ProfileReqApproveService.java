@@ -25,8 +25,8 @@ public class ProfileReqApproveService implements Action {
         
         // "admin" 역할이 있는지 확인 (UserDTO 구조에 따라 수정 필요)
         // 예시: sessionUser가 없거나 admin이 아니면 튕겨냄
-        if (sessionUser == null || !"admin".equals(sessionUser.getJdi_user())) { 
-            response.getWriter().write("<script>alert('관리자만 접근 가능합니다.'); location.href='main.jsp';</script>");
+        if (sessionUser == null || !"ADMIN".equals(sessionUser.getJdi_role())) { 
+            response.getWriter().write("<script>alert('관리자만 접근 가능합니다.'); location.href='adminMain.apply';</script>");
             return;
         }
 

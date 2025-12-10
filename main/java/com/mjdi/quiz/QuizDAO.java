@@ -3,15 +3,9 @@ package com.mjdi.quiz;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-
-import javax.servlet.ServletContext;
-
 import com.mjdi.util.DBM;
 
 public class QuizDAO {
@@ -21,71 +15,8 @@ public class QuizDAO {
     private static QuizDAO instance = new QuizDAO();
     public static QuizDAO getInstance() { return instance; }
     
- // 1. [트랜잭션용] 오답노트 추가 (없으면 INSERT, 있으면 횟수 증가)
-    public void addIncorrectNoteWithConn(Connection conn, String userId, int quizId) {
-        
-        // ★ 핵심: 이미 존재하면(DUPLICATE KEY) 날짜를 갱신하고 카운트를 1 올림
-        String sql = "INSERT INTO incorrect_note (jdi_user, quiz_id, wrong_date, wrong_count) "
-                   + "VALUES (?, ?, NOW(), 1) "
-                   + "ON DUPLICATE KEY UPDATE "
-                   + "wrong_date = NOW(), "
-                   + "wrong_count = wrong_count + 1";
-
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, userId);
-            pstmt.setInt(2, quizId);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            // 여기서 에러가 나면 콘솔에 출력 (트랜잭션 원인 파악용)
-            System.out.println("오답노트 저장 실패: " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            if(pstmt != null) try { pstmt.close(); } catch(Exception e) {}
-        }
-    }
-
-    // 2. [트랜잭션용] 오답노트 삭제 (복습 성공 시)
-    public void removeIncorrectNoteWithConn(Connection conn, String userId, int quizId) {
-        // 테이블명을 incorrect_note 로 수정
-        String sql = "DELETE FROM incorrect_note WHERE jdi_user=? AND quiz_id=?";
-        
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, userId);
-            pstmt.setInt(2, quizId);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if(pstmt != null) try { pstmt.close(); } catch(Exception e) {}
-        }
-    }
-
-    // 3. [트랜잭션용] 문제 풀이 횟수 증가 (jdi_login 테이블에 컬럼이 있다고 가정)
-    public void updateSolveCountWithConn(Connection conn, String userId, int count) {
-        // ★ 테이블명: jdi_login, 컬럼명: solve_count (DB에 이 컬럼이 있어야 함)
-        String sql = "UPDATE jdi_login SET solve_count = solve_count + ? WHERE jdi_user = ?";
-        
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, count);
-            pstmt.setString(2, userId);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            System.out.println("문제 풀이 횟수 업데이트 실패 (컬럼 확인 필요): " + e.getMessage());
-            e.printStackTrace();
-        } finally {
-            if(pstmt != null) try { pstmt.close(); } catch(Exception e) {}
-        }
-    }
-
     // ==========================================================
-    // 1. JLPT 급수별 퀴즈 랜덤 생성 (japanese_word 테이블 활용)
-    //    -> jquiz 테이블이 비어있어도 단어장에서 문제를 만들어냄
+    // [1] 랜덤 퀴즈 5문제 생성 (테이블명: japanese_word)
     // ==========================================================
     public List<QuizDTO> getRandomQuiz(String jlpt) {
         List<QuizDTO> list = new ArrayList<>();
@@ -95,372 +26,334 @@ public class QuizDAO {
         
         try {
             conn = DBM.getConnection();
-            
-            // (1) 해당 급수의 단어 중 정답 단어 5개 랜덤 추출
             String sql = "SELECT * FROM japanese_word WHERE jlpt = ? ORDER BY RAND() LIMIT 5";
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, jlpt);
             rs = pstmt.executeQuery();
             
             while(rs.next()) {
-                // 정답 데이터
-                int wordId = rs.getInt("word_id");
-                String word = rs.getString("word");
-                String answerDoc = rs.getString("doc"); // 정답 (요미가나)
-                String korean = rs.getString("korean"); // 뜻 (힌트)
+                QuizDTO quiz = new QuizDTO();
+                quiz.setQuiz_id(list.size() + 1); 
+                quiz.setWord_id(rs.getInt("word_id"));
+                quiz.setWord(rs.getString("word"));
+                quiz.setAnswer(rs.getString("korean"));
+                quiz.setJlpt(rs.getString("jlpt"));
                 
-                // (2) 오답 보기 3개 생성 (현재 정답이 아닌 단어 중에서 랜덤)
-                List<String> options = new ArrayList<>();
-                options.add(answerDoc); // 정답 먼저 넣기
-                
-                // 내부에서 별도 쿼리 실행
-                String sqlWrong = "SELECT doc FROM japanese_word WHERE word_id != ? ORDER BY RAND() LIMIT 3";
-                PreparedStatement pstmt2 = conn.prepareStatement(sqlWrong);
-                pstmt2.setInt(1, wordId);
-                ResultSet rs2 = pstmt2.executeQuery();
-                
-                while(rs2.next()) {
-                    options.add(rs2.getString("doc"));
-                }
-                rs2.close();
-                pstmt2.close();
-                
-                // 단어가 부족해서 보기가 4개가 안 되면 문제 생성 스킵
-                if(options.size() < 4) continue;
-                
-                // (3) 보기 섞기 (정답 위치 숨기기)
+                List<String> options = getWrongAnswers(conn, quiz.getJlpt(), quiz.getWord_id());
+                options.add(quiz.getAnswer());
+                while (options.size() < 4) options.add("보기 부족 (" + (options.size()+1) + ")");
                 Collections.shuffle(options);
                 
-                // (4) DTO 포장
-                QuizDTO dto = new QuizDTO();
-                dto.setQuiz_id(wordId);
-                dto.setWord(word);
-                dto.setKorean(korean);
-                dto.setJlpt(jlpt);
+                quiz.setSelection1(options.get(0));
+                quiz.setSelection2(options.get(1));
+                quiz.setSelection3(options.get(2));
+                quiz.setSelection4(options.get(3));
                 
-                dto.setSelection1(options.get(0));
-                dto.setSelection2(options.get(1));
-                dto.setSelection3(options.get(2));
-                dto.setSelection4(options.get(3));
-                
-                // 정답 번호 찾기 (1~4)
-                int ansIdx = options.indexOf(answerDoc) + 1;
-                dto.setAnswer(String.valueOf(ansIdx));
-                
-                list.add(dto);
+                for(int i=0; i<4; i++) {
+                    if(options.get(i).equals(quiz.getAnswer())) {
+                        quiz.setAnswer(String.valueOf(i+1));
+                        break;
+                    }
+                }
+                list.add(quiz);
             }
-            
-        } catch(Exception e) {
-            e.printStackTrace();
-        } finally {
-            DBM.close(conn, pstmt, rs);
-        }
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { DBM.close(conn, pstmt, rs); }
         return list;
     }
 
     // ==========================================================
-    // 2. 오늘의 퀴즈 (하루에 한 번만 변경 - 서버 전체 저장)
+    // [2] 특정 단어(ID)로 퀴즈 1개 생성 (오늘의 퀴즈용)
     // ==========================================================
-    public void checkAndSetGlobalQuiz(ServletContext application) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        String today = sdf.format(new Date());
-
-        String savedDate = (String) application.getAttribute("quizDate");
-        Object savedObj = application.getAttribute("todayQuiz");
-        
-        // 안전장치: 저장된 객체가 QuizDTO가 아니면 null 처리 (서버 재시작 없이 오류 방지)
-        QuizDTO savedQuiz = (savedObj instanceof QuizDTO) ? (QuizDTO) savedObj : null;
-
-        // 퀴즈가 없거나, 날짜가 바뀌었으면 새로 생성
-        if (savedQuiz == null || savedDate == null || !today.equals(savedDate)) {
-            System.out.println(">> [QuizDAO] 오늘의 퀴즈를 새로 생성합니다 (" + today + ")");
+    public QuizDTO getQuizByWordId(int wordId) {
+        QuizDTO quiz = null;
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            conn = DBM.getConnection();
+            String sql = "SELECT * FROM japanese_word WHERE word_id = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, wordId);
+            rs = pstmt.executeQuery();
             
+            if (rs.next()) {
+                quiz = new QuizDTO();
+                quiz.setQuiz_id(1); 
+                quiz.setWord_id(rs.getInt("word_id"));
+                quiz.setWord(rs.getString("word"));
+                quiz.setAnswer(rs.getString("korean"));
+                quiz.setJlpt(rs.getString("jlpt"));
+                
+                List<String> options = getWrongAnswers(conn, quiz.getJlpt(), quiz.getWord_id());
+                options.add(quiz.getAnswer());
+                while (options.size() < 4) options.add("보기 부족 (" + (options.size()+1) + ")");
+                Collections.shuffle(options);
+                
+                quiz.setSelection1(options.get(0));
+                quiz.setSelection2(options.get(1));
+                quiz.setSelection3(options.get(2));
+                quiz.setSelection4(options.get(3));
+                
+                for(int i=0; i<4; i++) {
+                    if(options.get(i).equals(quiz.getAnswer())) {
+                        quiz.setAnswer(String.valueOf(i+1));
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        finally { DBM.close(conn, pstmt, rs); }
+        return quiz;
+    }
+
+    // ==========================================================
+    // [3] 보조 메서드: 오답 보기 3개 가져오기
+    // ==========================================================
+    private List<String> getWrongAnswers(Connection conn, String jlpt, int correctWordId) {
+        List<String> options = new ArrayList<>();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            String sql = "SELECT korean FROM japanese_word WHERE jlpt = ? AND word_id != ? ORDER BY RAND() LIMIT 3";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setString(1, jlpt);
+            pstmt.setInt(2, correctWordId);
+            rs = pstmt.executeQuery();
+            while(rs.next()) options.add(rs.getString("korean"));
+        } catch(Exception e) { e.printStackTrace(); }
+        finally { 
+            if(rs!=null) try{rs.close();}catch(Exception e){}
+            if(pstmt!=null) try{pstmt.close();}catch(Exception e){}
+        }
+        return options;
+    }
+    
+    // ==========================================================
+    // [4] 오늘의 퀴즈 세팅 (앱 시작 시 호출)
+    // ==========================================================
+    public void checkAndSetGlobalQuiz(javax.servlet.ServletContext app) {
+        if(app.getAttribute("todayQuiz") == null) {
             Connection conn = null;
             PreparedStatement pstmt = null;
             ResultSet rs = null;
-            
             try {
                 conn = DBM.getConnection();
-                
-                // 전체 단어 중 1개 랜덤 추출
-                String sqlQuiz = "SELECT * FROM japanese_word ORDER BY RAND() LIMIT 1";
-                pstmt = conn.prepareStatement(sqlQuiz);
+                String sql = "SELECT * FROM japanese_word WHERE jlpt IN ('N3','N4','N5') ORDER BY RAND() LIMIT 1";
+                pstmt = conn.prepareStatement(sql);
                 rs = pstmt.executeQuery();
-                
-                if (rs.next()) {
-                    int wordId = rs.getInt("word_id");
-                    String word = rs.getString("word");
-                    String answerDoc = rs.getString("doc");
-                    String korean = rs.getString("korean");
-                    String jlpt = rs.getString("jlpt");
-
-                    // 오답 보기 3개
-                    String sqlWrong = "SELECT doc FROM japanese_word WHERE word_id != ? ORDER BY RAND() LIMIT 3";
-                    PreparedStatement pstmt2 = conn.prepareStatement(sqlWrong);
-                    pstmt2.setInt(1, wordId);
-                    ResultSet rs2 = pstmt2.executeQuery();
-                    
-                    List<String> options = new ArrayList<>();
-                    options.add(answerDoc);
-                    while(rs2.next()) {
-                        options.add(rs2.getString("doc"));
-                    }
-                    Collections.shuffle(options);
-                    
-                    QuizDTO quizDto = new QuizDTO();
-                    quizDto.setQuiz_id(wordId);
-                    quizDto.setWord(word);
-                    quizDto.setKorean(korean);
-                    quizDto.setJlpt(jlpt);
-                    
-                    quizDto.setSelection1(options.get(0));
-                    quizDto.setSelection2(options.get(1));
-                    quizDto.setSelection3(options.get(2));
-                    quizDto.setSelection4(options.get(3));
-                    
-                    int answerIndex = options.indexOf(answerDoc) + 1;
-                    quizDto.setAnswer(String.valueOf(answerIndex));
-                    
-                    // 서버 공용 저장소(Application)에 저장
-                    application.setAttribute("todayQuiz", quizDto);
-                    application.setAttribute("quizDate", today);
-                    application.setAttribute("todaySolvedUsers", new HashSet<String>());
-             
-                    System.out.println(">> [QuizDAO] 오늘의 퀴즈 및 참여자 명단이 초기화되었습니다.");
-                    
-                    rs2.close();
-                    pstmt2.close();
+                if(rs.next()) {
+                    QuizDTO dto = new QuizDTO();
+                    dto.setWord_id(rs.getInt("word_id"));
+                    dto.setWord(rs.getString("word"));
+                    dto.setAnswer(rs.getString("korean"));
+                    dto.setJlpt(rs.getString("jlpt"));
+                    app.setAttribute("todayQuiz", dto);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                DBM.close(conn, pstmt, rs);
-            }
+            } catch(Exception e) { e.printStackTrace(); }
+            finally { DBM.close(conn, pstmt, rs); }
         }
     }
 
     // ==========================================================
-    // 3. 오답 노트 추가 (틀렸을 때)
+    // [5] 트랜잭션 지원 메서드들 (Connection을 매개변수로 받음)
     // ==========================================================
-    public void addIncorrectNote(String userId, int quizId) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        
+
+    // 5-1. 오답노트 추가 (트랜잭션용) - [수정됨: 외래키 오류 방지 로직 추가]
+    public void addIncorrectNoteWithConn(Connection conn, String userId, int wordId) throws Exception {
+        // 1. 단어 존재 여부 확인 (삭제된 단어 참조 방지)
+        String checkSql = "SELECT COUNT(*) FROM japanese_word WHERE word_id = ?";
+        boolean exists = false;
+        try (PreparedStatement checkPstmt = conn.prepareStatement(checkSql)) {
+            checkPstmt.setInt(1, wordId);
+            try (ResultSet rs = checkPstmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    exists = true;
+                }
+            }
+        }
+
+        // 2. 단어가 존재하지 않으면 삽입하지 않고 리턴 (에러 방지)
+        if (!exists) {
+            System.out.println("⚠️ [알림] 존재하지 않는 단어 ID(" + wordId + ")를 오답노트에 추가하려 했습니다. 작업을 건너뜁니다.");
+            return;
+        }
+
+        // 3. 단어가 존재할 때만 실행
         String sql = "INSERT INTO incorrect_note (jdi_user, quiz_id, wrong_count, wrong_date) "
                    + "VALUES (?, ?, 1, NOW()) "
                    + "ON DUPLICATE KEY UPDATE wrong_count = wrong_count + 1, wrong_date = NOW()";
-        
-        try {
-            conn = DBM.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, userId); 
-            pstmt.setInt(2, quizId);    
-            
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setInt(2, wordId); // quiz_id 컬럼에 word_id 저장
             pstmt.executeUpdate();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            DBM.close(conn, pstmt);
+        }
+    }
+
+    // 5-2. 오답노트 삭제 (트랜잭션용)
+    public void removeIncorrectNoteWithConn(Connection conn, String userId, int wordId) throws Exception {
+        String sql = "DELETE FROM incorrect_note WHERE jdi_user = ? AND quiz_id = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setInt(2, wordId);
+            pstmt.executeUpdate();
+        }
+    }
+
+    // 5-3. 풀이 횟수 증가 (트랜잭션용)
+    public void updateSolveCountWithConn(Connection conn, String userId, int count) throws Exception {
+        String sql = "UPDATE jdi_login SET jdi_solve_count = jdi_solve_count + ? WHERE jdi_user = ?";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, count);
+            pstmt.setString(2, userId);
+            pstmt.executeUpdate();
+        }
+    }
+    
+    // 5-4. 퀴즈 결과 기록 (히스토리) 저장 (트랜잭션용) ★ 마이페이지 그래프용
+    public void insertQuizHistoryWithConn(Connection conn, String userId, int correctCnt, int totalCnt) throws Exception {
+        String sql = "INSERT INTO jdi_quiz_history (jdi_user, correct_cnt, total_cnt, solve_date) VALUES (?, ?, ?, NOW())";
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, userId);
+            pstmt.setInt(2, correctCnt);
+            pstmt.setInt(3, totalCnt);
+            pstmt.executeUpdate();
         }
     }
 
     // ==========================================================
-    // 4. 내 오답 노트 조회 (수정됨)
+    // [6] 일반 조회 메서드 (Connection 생성/종료 포함)
     // ==========================================================
+
+    // 6-1. 내 오답 노트 조회
     public List<QuizDTO> getIncorrectNotes(String userId) {
         List<QuizDTO> list = new ArrayList<>();
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         
-        // n.quiz_id는 사실상 word_id와 같습니다.
-        String safeSql = "SELECT n.quiz_id, w.word, w.doc, w.korean, n.wrong_count, n.wrong_date "
-                       + "FROM incorrect_note n "
-                       + "JOIN japanese_word w ON n.quiz_id = w.word_id "
-                       + "WHERE n.jdi_user = ? "
-                       + "ORDER BY n.wrong_date DESC";
+        String sql = "SELECT n.quiz_id, w.word, w.doc, w.korean, n.wrong_count, n.wrong_date "
+                   + "FROM incorrect_note n "
+                   + "JOIN japanese_word w ON n.quiz_id = w.word_id "
+                   + "WHERE n.jdi_user = ? ORDER BY n.wrong_date DESC";
 
         try {
             conn = DBM.getConnection();
-            pstmt = conn.prepareStatement(safeSql);
+            pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
             rs = pstmt.executeQuery();
-            
             while(rs.next()) {
                 QuizDTO dto = new QuizDTO();
-                
-                // ★ [핵심 수정] quiz_id뿐만 아니라 word_id도 꼭 넣어줘야 합니다!
-                int id = rs.getInt("quiz_id");
-                dto.setQuiz_id(id);
-                dto.setWord_id(id); // <--- 이 부분이 빠져서 0으로 나오고 있었습니다.
-                
+                dto.setQuiz_id(rs.getInt("quiz_id"));
+                dto.setWord_id(rs.getInt("quiz_id")); // word_id도 세팅
                 dto.setWord(rs.getString("word"));
-                
-                String doc = rs.getString("doc");
-                String kor = rs.getString("korean");
-                dto.setDoc(doc == null ? "-" : doc);
-                dto.setKorean(kor == null ? "정보 없음" : kor);
-                
+                dto.setDoc(rs.getString("doc"));
+                dto.setKorean(rs.getString("korean"));
                 dto.setWrong_count(rs.getInt("wrong_count"));
                 dto.setWrong_date(rs.getString("wrong_date"));
-                
                 list.add(dto);
             }
-        } catch(Exception e) {
-            e.printStackTrace();
-        } finally {
-            DBM.close(conn, pstmt, rs);
-        }
-        
+        } catch(Exception e) { e.printStackTrace(); }
+        finally { DBM.close(conn, pstmt, rs); }
         return list;
     }
 
-    // ==========================================
-    // 5. 오답노트 개수 조회 (10개 이상인지 체크용)
-    // ==========================================
+    // 6-2. 오답노트 개수 조회
     public int getIncorrectCount(String userId) {
         int count = 0;
         String sql = "SELECT COUNT(*) FROM incorrect_note WHERE jdi_user = ?";
-        
         try (Connection conn = DBM.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    count = rs.getInt(1);
-                }
+                if (rs.next()) count = rs.getInt(1);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         return count;
     }
 
-    // ==========================================
-    // 6. 오답노트 복습 퀴즈 생성 (오답 목록에서 5개 랜덤 추출)
-    // ==========================================
-    public List<QuizDTO> getIncorrectQuiz(String userId) {
-        List<QuizDTO> list = new ArrayList<>();
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        
-        try {
-            conn = DBM.getConnection();
-            
-            // 내 오답노트(n)와 단어장(w)을 조인하여 단어 정보 가져오기
-            String sql = "SELECT w.word_id, w.word, w.doc, w.korean, w.jlpt "
-                       + "FROM incorrect_note n "
-                       + "JOIN japanese_word w ON n.quiz_id = w.word_id "
-                       + "WHERE n.jdi_user = ? "
-                       + "ORDER BY RAND() LIMIT 5"; // 랜덤 5문제
-            
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setString(1, userId);
-            rs = pstmt.executeQuery();
-            
-            while(rs.next()) {
-                int wordId = rs.getInt("word_id");
-                String word = rs.getString("word");
-                String answerDoc = rs.getString("doc");
-                String korean = rs.getString("korean");
-                String jlpt = rs.getString("jlpt");
-
-                // 오답 보기 3개 생성 (전체 단어장에서 랜덤)
-                List<String> options = new ArrayList<>();
-                options.add(answerDoc);
-                
-                String sqlWrong = "SELECT doc FROM japanese_word WHERE word_id != ? ORDER BY RAND() LIMIT 3";
-                PreparedStatement pstmt2 = conn.prepareStatement(sqlWrong);
-                pstmt2.setInt(1, wordId);
-                ResultSet rs2 = pstmt2.executeQuery();
-                
-                while(rs2.next()) {
-                    options.add(rs2.getString("doc"));
-                }
-                rs2.close();
-                pstmt2.close();
-                
-                if(options.size() < 4) continue;
-                
-                Collections.shuffle(options);
-                
-                QuizDTO dto = new QuizDTO();
-                dto.setQuiz_id(wordId);
-                dto.setWord(word);
-                dto.setKorean(korean);
-                dto.setJlpt(jlpt);
-                
-                dto.setSelection1(options.get(0));
-                dto.setSelection2(options.get(1));
-                dto.setSelection3(options.get(2));
-                dto.setSelection4(options.get(3));
-                
-                int ansIdx = options.indexOf(answerDoc) + 1;
-                dto.setAnswer(String.valueOf(ansIdx));
-                
-                list.add(dto);
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        } finally {
-            DBM.close(conn, pstmt, rs);
-        }
-        return list;
-    }
-
-    // ==========================================
-    // 7. 오답노트 삭제 (복습 성공 시)
-    // ==========================================
-    public void removeIncorrectNote(String userId, int quizId) {
-        String sql = "DELETE FROM incorrect_note WHERE jdi_user = ? AND quiz_id = ?";
-        
+    // 6-3. 나의 총 풀이 횟수 조회
+    public int getMySolveCount(String userId) {
+        int count = 0;
+        String sql = "SELECT jdi_solve_count FROM jdi_login WHERE jdi_user = ?";
         try (Connection conn = DBM.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, userId);
-            pstmt.setInt(2, quizId);
-            pstmt.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if(rs.next()) count = rs.getInt(1);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return count;
     }
     
- // 8. [신규] 문제 풀이 횟수 증가 (퀴즈 제출 시 호출)
-    public void updateSolveCount(String userId, int count) {
-        Connection conn = null;
-        PreparedStatement pstmt = null;
-        // 기존 횟수에 방금 푼 문제 수(count)만큼 더함
-        String sql = "UPDATE jdi_login SET jdi_solve_count = jdi_solve_count + ? WHERE jdi_user = ?";
-        
-        try {
-            conn = DBM.getConnection();
-            pstmt = conn.prepareStatement(sql);
-            pstmt.setInt(1, count);
-            pstmt.setString(2, userId);
-            pstmt.executeUpdate();
-        } catch (Exception e) { e.printStackTrace(); }
-        finally { DBM.close(conn, pstmt); }
-    }
-
-    // 9. [신규] 나의 총 풀이 횟수 조회 (마이페이지용)
-    public int getMySolveCount(String userId) {
-        int count = 0;
+    // 6-4. 최근 30건 정답률 조회 (마이페이지 그래프용)
+    public List<Integer> getRecentScores(String userId) {
+        List<Integer> scores = new ArrayList<>();
         Connection conn = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
-        String sql = "SELECT jdi_solve_count FROM jdi_login WHERE jdi_user = ?";
+        // 최근 30개를 가져와서, 오래된 순서대로 정렬해야 그래프가 예쁘게 그려짐 (과거 -> 현재)
+        String sql = "SELECT * FROM (SELECT correct_cnt, total_cnt, solve_date FROM jdi_quiz_history WHERE jdi_user = ? ORDER BY solve_date DESC LIMIT 30) AS sub ORDER BY solve_date ASC";
         
         try {
             conn = DBM.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, userId);
             rs = pstmt.executeQuery();
-            if(rs.next()) {
-                count = rs.getInt(1);
+            while(rs.next()) {
+                int correct = rs.getInt("correct_cnt");
+                int total = rs.getInt("total_cnt");
+                if(total == 0) total = 5; 
+                int score = (correct * 100) / total;
+                scores.add(score);
             }
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch(Exception e) { e.printStackTrace(); }
         finally { DBM.close(conn, pstmt, rs); }
-        return count;
+        return scores;
+    }
+    
+    // 6-5. 오답노트 복습 퀴즈 생성
+    public List<QuizDTO> getIncorrectQuiz(String userId) {
+       List<QuizDTO> list = new ArrayList<>();
+       Connection conn = null;
+       PreparedStatement pstmt = null;
+       ResultSet rs = null;
+       
+       try {
+           conn = DBM.getConnection();
+           String sql = "SELECT w.word_id, w.word, w.doc, w.korean, w.jlpt FROM incorrect_note n JOIN japanese_word w ON n.quiz_id = w.word_id WHERE n.jdi_user = ? ORDER BY RAND() LIMIT 5";
+           pstmt = conn.prepareStatement(sql);
+           pstmt.setString(1, userId);
+           rs = pstmt.executeQuery();
+           
+           while(rs.next()) {
+               QuizDTO dto = new QuizDTO();
+               dto.setQuiz_id(rs.getInt("word_id"));
+               dto.setWord_id(rs.getInt("word_id"));
+               dto.setWord(rs.getString("word"));
+               dto.setKorean(rs.getString("korean"));
+               dto.setJlpt(rs.getString("jlpt"));
+               
+               List<String> options = getWrongAnswers(conn, dto.getJlpt(), dto.getWord_id());
+               options.add(dto.getKorean());
+               while(options.size() < 4) options.add("보기 부족");
+               Collections.shuffle(options);
+               
+               dto.setSelection1(options.get(0));
+               dto.setSelection2(options.get(1));
+               dto.setSelection3(options.get(2));
+               dto.setSelection4(options.get(3));
+               
+               for(int i=0; i<4; i++) {
+                   if(options.get(i).equals(dto.getKorean())) {
+                       dto.setAnswer(String.valueOf(i+1));
+                       break;
+                   }
+               }
+               list.add(dto);
+           }
+       } catch(Exception e) { e.printStackTrace(); }
+       finally { DBM.close(conn, pstmt, rs); }
+       return list;
     }
 }

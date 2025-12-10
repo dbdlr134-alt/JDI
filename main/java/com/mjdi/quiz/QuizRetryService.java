@@ -21,9 +21,9 @@ public class QuizRetryService implements Action {
         
         QuizDAO dao = QuizDAO.getInstance();
         int count = dao.getIncorrectCount(user.getJdi_user());
-        if (count < 10) {
+        if (count < 5) {
             response.setContentType("text/html; charset=UTF-8");
-            response.getWriter().println("<script>alert('오답노트가 10개 이상이어야 복습할 수 있습니다! 현재: " + count + "개'); history.back();</script>");
+            response.getWriter().println("<script>alert('오답노트가 5개 이상이어야 복습할 수 있습니다! 현재: " + count + "개'); history.back();</script>");
             return;
         }
         
